@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 492" width="680" height="492" role="img" aria-label="采购降本闭环流程">
+<title>采购降本闭环流程</title>
+<desc>数据获取、识别采购增量机会、分派执行、降本统计（基于事实算实际降本）、HTML 看板，由定时任务驱动闭环。</desc>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</marker>
+</defs>
+
+<rect x="0" y="0" width="680" height="492" fill="#FFFFFF"/>
+
+<g>
+<rect x="90" y="30" width="470" height="48" rx="8" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.5"/>
+<text x="114" y="48" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="500" fill="#0C447C" dominant-baseline="central">① 数据获取</text>
+<text x="114" y="65" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#185FA5" dominant-baseline="central">数据中台接口 · 按日归档</text>
+</g>
+
+<path d="M325 78L325 104" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<g>
+<rect x="90" y="108" width="470" height="58" rx="8" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.5"/>
+<text x="114" y="126" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="500" fill="#0C447C" dominant-baseline="central">② 识别机会</text>
+<text x="114" y="143" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#185FA5" dominant-baseline="central">Jupyter 迭代推演 → 固化 Python 脚本</text>
+<text x="114" y="158" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11" fill="#5F5E5A" dominant-baseline="central">产出：采购增量证据与谈判候选</text>
+</g>
+
+<path d="M325 166L325 192" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<g>
+<rect x="90" y="196" width="470" height="48" rx="8" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="0.5" stroke-dasharray="4 3"/>
+<text x="114" y="214" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="500" fill="#444441" dominant-baseline="central">③ 分派执行</text>
+<text x="114" y="231" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#5F5E5A" dominant-baseline="central">高优先级 → 钉钉 CLI → 多维表 → 认领目标 · 通知</text>
+</g>
+
+<path d="M325 244L325 270" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<g>
+<rect x="90" y="274" width="470" height="110" rx="10" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.5"/>
+<text x="114" y="292" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="500" fill="#0C447C" dominant-baseline="central">④ 降本统计（基于事实）</text>
+
+<rect x="110" y="306" width="180" height="30" rx="6" fill="#FFFFFF" stroke="#378ADD" stroke-width="0.5"/>
+<text x="200" y="321" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11" fill="#0C447C" text-anchor="middle" dominant-baseline="central">系统事实 · 入库 / 协议变更</text>
+
+<rect x="110" y="342" width="180" height="30" rx="6" fill="#FFFFFF" stroke="#378ADD" stroke-width="0.5"/>
+<text x="200" y="357" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11" fill="#0C447C" text-anchor="middle" dominant-baseline="central">人工登记 · 多维表变更</text>
+
+<path d="M292 321L326 321" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M292 357L326 357" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<rect x="330" y="306" width="200" height="66" rx="6" fill="#FFFFFF" stroke="#378ADD" stroke-width="0.5"/>
+<text x="430" y="323" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13" font-weight="500" fill="#0C447C" text-anchor="middle" dominant-baseline="central">综合计算</text>
+<text x="430" y="342" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#185FA5" text-anchor="middle" dominant-baseline="central">实际降本 · 完成率</text>
+<text x="430" y="359" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11" fill="#888780" text-anchor="middle" dominant-baseline="central">完成率 = 实际 ÷ 降本目标</text>
+</g>
+
+<path d="M325 384L325 408" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<g>
+<rect x="90" y="412" width="470" height="44" rx="8" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.5"/>
+<text x="114" y="434" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="500" fill="#0C447C" dominant-baseline="central">⑤ HTML 看板</text>
+</g>
+
+<path d="M325 456L325 468L60 468L60 54L86 54" fill="none" stroke="#B4B2A9" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
+<text x="72" y="484" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="11" fill="#888780">下一周期 · WorkBuddy 定时触发</text>
+</svg>
