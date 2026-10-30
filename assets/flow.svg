@@ -12,7 +12,7 @@
 <g>
 <rect x="90" y="30" width="470" height="48" rx="8" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.5"/>
 <text x="114" y="48" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="500" fill="#0C447C" dominant-baseline="central">① 数据获取</text>
-<text x="114" y="65" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#185FA5" dominant-baseline="central">数据中台接口 · 按日归档</text>
+<text x="114" y="65" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#185FA5" dominant-baseline="central">本地导出文件 · 按日归档</text>
 </g>
 
 <path d="M325 78L325 104" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>

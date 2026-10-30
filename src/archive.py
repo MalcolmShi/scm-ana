@@ -1,4 +1,8 @@
-"""按来源和抓取日读写 parquet 归档，不包含接口或采购业务逻辑。"""
+"""归档层：按来源和归档日读写 parquet 归档。
+
+路径规则 ``data/<层>/<来源>/<YYYY>/<YYYY-MM>/<YYYY-MM-DD>/data.parquet`` 对所有来源通用，
+不包含来源读取和采购业务逻辑。来源实现在 ``src/sources/``。
+"""
 from __future__ import annotations
 
 import re
@@ -72,12 +76,17 @@ def latest_snapshot_date(source: str) -> str:
     return max(days)
 
 
-def write_snapshot(frame: pd.DataFrame, layer: str, source: str, snapshot_date: str) -> Path:
-    """原子替换当天文件，其他日期不受影响；不对数据字段做转换。"""
+def write_snapshot(frame: pd.DataFrame, layer: str, source: str, snapshot_date: str,
+                   check_fetched_at: bool = True) -> Path:
+    """原子替换当天文件，其他日期不受影响；不对数据字段做转换。
+
+    ``check_fetched_at=False`` 用于按业务日期分档：目录日期是业务日期，
+    表内 ``_fetched_at`` 记录的是转换时间，两者本就不相等。
+    """
     path = snapshot_path(layer, source, snapshot_date)
     if META_SOURCE in frame and set(frame[META_SOURCE].dropna()) != {source}:
         raise DataStoreError("表内数据来源与归档来源不一致")
-    if META_FETCHED_AT in frame:
+    if check_fetched_at and META_FETCHED_AT in frame:
         stamps = frame[META_FETCHED_AT].dropna().unique()
         if len(stamps) != 1 or archive_date(str(stamps[0])) != snapshot_date:
             raise DataStoreError("表内抓取时间必须唯一，且与归档日期一致")

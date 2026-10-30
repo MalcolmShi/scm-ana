@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""采购增量分析计算。口径见 docs/采购增量分析.md，探索见 notebooks/采购增量分析.ipynb。"""
+"""采购增量分析计算。口径见 docs/降本识别/采购增量分析.md，探索见 notebooks/采购增量分析.ipynb。"""
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
-from pipeline import load_from_connector, load_source
-
-
-DEFAULT_SOURCE = "procurement-inbound"
+from pipeline import DEFAULT_SOURCE, load_from_source, load_source
 
 #: 分析口径常量 —— 与方案文档一一对应，改动请同步方案文档
 TARGET_BOARDS: List[str] = ["检验", "检验产品", "诊断"]
@@ -61,7 +59,7 @@ class Config:
     window_months: int = ANALYSIS_WINDOW_MONTHS
     recent_filter_months: int = RECENT_FILTER_MONTHS
     min_recent_amount_wan: float = MIN_RECENT_AMOUNT_WAN
-    snapshot_date: Optional[str] = None  # 抓取日 YYYY-MM-DD；None 读取最新归档
+    snapshot_date: Optional[str] = None  # 归档日 YYYY-MM-DD；None 读取最新归档
     boards: List[str] = None
 
     def __post_init__(self) -> None:
@@ -77,15 +75,15 @@ def load_source_data(cfg: Config, source: str = "local") -> Tuple[pd.DataFrame, 
 
     Args:
         source: ``local`` 读 ``data/processed/``（默认，快且离线可用）；
-            ``connector`` 直接从数据源接口拉最新数据，不落本地。
+            ``live`` 直接读取来源的本地导出文件，不落本地。
 
     Returns:
         ``(DataFrame, meta)``，meta 记录实际使用的数据文件、抓取时间与覆盖范围。
     """
-    if source == "connector":
+    if source == "live":
         if cfg.snapshot_date:
             raise ValueError("实时取数不能指定历史归档日；请使用本地读取方式")
-        df, meta = load_from_connector(cfg.source)
+        df, meta = load_from_source(cfg.source)
     else:
         df, meta = load_source(cfg.source, snapshot_date=cfg.snapshot_date)
     return df, meta
@@ -94,8 +92,25 @@ def load_source_data(cfg: Config, source: str = "local") -> Tuple[pd.DataFrame, 
 # --------------------------------------------------------------------------
 # 阶段一：范围过滤与清洗
 # --------------------------------------------------------------------------
+def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """把导出文件的原始列名对齐到分析口径。
+
+    只做字段名映射，不改数值、不做单位换算：导出文件用「数量」「年份」「月份」，
+    清洗后的底表用「数量合计」「采购入库年份」「采购入库月份」。
+    """
+    frame = df.copy()
+    if "数量合计" not in frame.columns and "数量" in frame.columns:
+        frame = frame.rename(columns={"数量": "数量合计"})
+    if "采购入库年份" not in frame.columns and "年份" in frame.columns:
+        frame = frame.rename(columns={"年份": "采购入库年份"})
+    if "采购入库月份" not in frame.columns and "月份" in frame.columns:
+        frame = frame.rename(columns={"月份": "采购入库月份"})
+    return frame
+
+
 def clean_and_filter(df: pd.DataFrame, cfg: Config) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """板块过滤、字段清洗、12 个月窗口裁剪、最近 N 个月金额准入。"""
+    df = normalize_columns(df)
     available_cols = [c for c in ANALYSIS_COLUMNS if c in df.columns]
     missing = [c for c in ("板块", "物料编码", "数量合计", "采购不含税金额(万)") if c not in df.columns]
     if missing:
@@ -351,7 +366,7 @@ def run_analysis(cfg: Config, source: str = "local") -> Dict[str, Any]:
     meta["snapshot_date"] = data_meta.get("snapshot_date")
     meta["fetched_at"] = data_meta.get("fetched_at")
     meta["data_month_range"] = data_meta.get("data_month_range", {})
-    meta["read_from"] = "本地数据仓" if source != "connector" else "数据源 connector"
+    meta["read_from"] = "本地数据仓" if source != "live" else "来源实时读取"
 
     return {
         "config": asdict(cfg),
@@ -362,3 +377,15 @@ def run_analysis(cfg: Config, source: str = "local") -> Dict[str, Any]:
         "priority_summary": priority_summary,
         "report_end_month": meta["window_end"],
     }
+
+
+def export(result: Dict[str, Any], out_dir: Path) -> Path:
+    """导出 Excel 报告，返回文件路径。"""
+    from reporting.excel import export_excel
+
+    meta = result["meta"]
+    reports_dir = Path(out_dir) / "reports" / str(meta["snapshot_date"])
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    path = reports_dir / f"{result['report_end_month']}采购增量分析报告.xlsx"
+    export_excel(result, path)
+    return path

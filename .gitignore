@@ -9,12 +9,6 @@ venv/
 *.egg-info/
 .ipynb_checkpoints/
 
-# 本地归档和新生成的报告
-/data/raw/**
-!/data/raw/.gitkeep
-/data/processed/**
-!/data/processed/.gitkeep
-/outputs/**
 
 # 数据同步日志
 data/sync.log
@@ -34,3 +28,5 @@ data/peek/
 
 # WorkBuddy 项目记忆
 .workbuddy/
+
+.local-data/

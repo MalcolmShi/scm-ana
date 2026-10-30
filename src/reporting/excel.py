@@ -3,7 +3,7 @@
 """Excel 报告导出 —— 报告、月度数据、规则说明、图表四个工作表。
 
 样式与字段口径沿用 ``notebooks/采购增量分析.ipynb`` 中已确认的实现，
-方案见 ``docs/采购增量分析.md`` 第六节。
+方案见 ``docs/降本识别/采购增量分析.md`` 第六节。
 """
 from __future__ import annotations
 
@@ -305,4 +305,4 @@ def export_excel(result: Dict[str, Any], output_path: Path) -> Path:
 
 
 if __name__ == "__main__":
-    print("本模块由 scripts/procurement_analysis.py 调用，不单独运行。")
+    print("本模块由 scripts/run_analysis.py 调用，不单独运行。")

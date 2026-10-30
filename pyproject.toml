@@ -14,8 +14,8 @@ notebooks = ["jupyterlab>=4", "ipykernel>=6"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-py-modules = ["data", "pipeline", "paths", "envfile", "procurement"]
+py-modules = ["archive", "pipeline", "paths"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["connectors*", "cleaning*", "reporting*"]
+include = ["analysis*", "reporting*", "sources*"]

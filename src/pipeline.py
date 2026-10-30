@@ -1,32 +1,34 @@
-"""数据来源的取数、清洗与归档流程。固定接口规则仍属于各自的客户端。"""
+"""数据接入编排：来源读取 → raw 归档 → 归档读取。
+
+来源实现在 ``src/sources/``（对应 ``docs/数据接入/``），归档读写在 ``src/archive.py``。
+本模块只做编排，不含采购业务口径。
+"""
 from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Iterable, List, Optional
 
 import pandas as pd
 
-import data
-from cleaning.procurement_inbound import clean_procurement, month_range
-from connectors.procurement_inbound import ProcurementInboundClient
-from envfile import load_env
+import archive
 from paths import PROJECT_ROOT, TIMEZONE
+from sources import UnknownSourceError, get as get_source, resolve, source_ids
 
 DEFAULT_SOURCE = "procurement-inbound"
 
-# 新来源只在这里选择实际的取数与清洗函数，不用 JSON 描述接口协议。
-SOURCE_HANDLERS = {
-    DEFAULT_SOURCE: (ProcurementInboundClient, clean_procurement, month_range),
-}
-SOURCE_ALIASES = {"采购入库": DEFAULT_SOURCE, "入库明细": DEFAULT_SOURCE}
+#: 归档分档方式
+#: - fetch-day：转换当天一版全量快照
+#: - business-date：按记录里的业务日期逐日成档
+ARCHIVE_MODES = ("fetch-day", "business-date")
 
 
 def resolve_source_id(source: str) -> str:
-    source = SOURCE_ALIASES.get(source, source)
-    if source not in SOURCE_HANDLERS:
-        raise data.DataStoreError(f"未知数据来源「{source}」，可选 {', '.join(SOURCE_HANDLERS)}")
-    return source
+    """把别名或来源 id 归一成来源 id。"""
+    try:
+        return resolve(source)
+    except UnknownSourceError as exc:
+        raise archive.DataStoreError(str(exc)) from None
 
 
 def _metadata(frame: pd.DataFrame, meta: dict, coverage) -> dict:
@@ -41,78 +43,108 @@ def _metadata(frame: pd.DataFrame, meta: dict, coverage) -> dict:
 
 
 def fetch_raw(source: str = DEFAULT_SOURCE) -> tuple[pd.DataFrame, dict]:
-    """实时读取原始记录，不写入文件。"""
+    """读取来源的原始记录，不写入文件。"""
     source = resolve_source_id(source)
-    client_factory, _, coverage = SOURCE_HANDLERS[source]
-    load_env()
-    client = client_factory()
-    rows = client.fetch_all()
-    if not rows:
-        raise data.DataStoreError(f"来源「{source}」接口返回 0 行，已中止")
+    source_class = get_source(source)
+    frame, info = source_class().load()
+    if frame.empty:
+        raise archive.DataStoreError(f"来源「{source}」没有数据行，已中止")
     stamp = datetime.now(TIMEZONE).isoformat(timespec="seconds")
-    frame = pd.DataFrame(rows).assign(_source=source, _fetched_at=stamp)
+    frame = frame.assign(_source=source, _fetched_at=stamp)
     return frame, {
-        "source": source, "snapshot_date": data.archive_date(stamp),
+        "source": source, "snapshot_date": archive.archive_date(stamp),
         "fetched_at": stamp, "data_file": None, "rows": len(frame),
-        "endpoint": client.url, "data_month_range": coverage(frame),
+        "files": info.get("files", []),
+        "data_month_range": source_class.coverage(frame),
     }
 
 
-def sync_source(source: str = DEFAULT_SOURCE, dry_run: bool = False) -> dict:
-    """验证完整输入后，按抓取日保存 raw 和 processed。"""
+def split_by_business_date(frame: pd.DataFrame, date_column: str,
+                           dates: Optional[Iterable[str]] = None) -> Dict[str, pd.DataFrame]:
+    """按业务日期切分记录。``dates`` 为空表示全部有记录的日期。"""
+    if date_column not in frame.columns:
+        raise archive.DataStoreError(f"来源数据缺少业务日期列「{date_column}」，无法按业务日期分档")
+    wanted = set(dates) if dates else None
+    keys = pd.to_datetime(frame[date_column], errors="coerce").dt.strftime("%Y-%m-%d")
+    parts: Dict[str, pd.DataFrame] = {}
+    for day, part in frame.groupby(keys, sort=True):
+        if not isinstance(day, str) or not day:
+            continue
+        if wanted and day not in wanted:
+            continue
+        parts[day] = part.reset_index(drop=True)
+    return parts
+
+
+def sync_source(source: str = DEFAULT_SOURCE, dry_run: bool = False,
+                mode: str = "fetch-day", dates: Optional[Iterable[str]] = None) -> dict:
+    """读取来源并写入 raw 归档。
+
+    Args:
+        mode: ``fetch-day`` 转换当天一版全量；``business-date`` 按业务日期逐日成档。
+        dates: ``business-date`` 模式下只归档这些日期（YYYY-MM-DD），为空表示全部。
+    """
+    if mode not in ARCHIVE_MODES:
+        raise archive.DataStoreError(f"未知归档方式「{mode}」，可选 {', '.join(ARCHIVE_MODES)}")
     source = resolve_source_id(source)
-    _, clean, _ = SOURCE_HANDLERS[source]
+    source_class = get_source(source)
     raw, meta = fetch_raw(source)
     if raw.empty:
-        raise data.DataStoreError(f"来源「{source}」为空，已中止")
-    processed = clean(raw)
-    day = meta["snapshot_date"]
-    raw_path = data.snapshot_path("raw", source, day)
-    processed_path = data.snapshot_path("processed", source, day)
-    previous_stamp = None
-    if raw_path.is_file():
-        _, previous_meta = data.read_snapshot("raw", source, day)
-        previous_stamp = previous_meta["fetched_at"]
-    if not dry_run:
-        data.write_snapshot(raw, "raw", source, day)
-        data.write_snapshot(processed, "processed", source, day)
+        raise archive.DataStoreError(f"来源「{source}」为空，已中止")
+
+    if mode == "fetch-day":
+        day = meta["snapshot_date"]
+        target = archive.snapshot_path("raw", source, day)
+        previous_stamp = None
+        if target.is_file():
+            _, previous_meta = archive.read_snapshot("raw", source, day)
+            previous_stamp = previous_meta["fetched_at"]
+        if not dry_run:
+            archive.write_snapshot(raw, "raw", source, day)
+        return {
+            **meta, "mode": mode, "status": "dry-run" if dry_run else "synced",
+            "target": str(target), "previous_fetched_at": previous_stamp,
+        }
+
+    date_column = getattr(source_class, "date_column", None)
+    parts = split_by_business_date(raw, date_column, dates)
+    if not parts:
+        raise archive.DataStoreError("没有匹配的业务日期，未写归档")
+    written = {}
+    for day, part in parts.items():
+        target = archive.snapshot_path("raw", source, day)
+        if not dry_run:
+            archive.write_snapshot(part, "raw", source, day, check_fetched_at=False)
+        written[day] = {"rows": len(part), "path": str(target)}
     return {
-        **meta, "status": "dry-run" if dry_run else "synced",
-        "target": str(raw_path), "processed": str(processed_path),
-        "previous_fetched_at": previous_stamp,
+        **meta, "mode": mode, "status": "dry-run" if dry_run else "synced",
+        "days": sorted(written), "written": written,
+        "target": str(archive.snapshot_path("raw", source, sorted(written)[0])),
     }
-
-
-def prepare_source(source: str = DEFAULT_SOURCE, snapshot_date: Optional[str] = None) -> dict:
-    """用指定日 raw 重建同一天的 processed，不重新取数。"""
-    source = resolve_source_id(source)
-    _, clean, coverage = SOURCE_HANDLERS[source]
-    raw, meta = data.read_snapshot("raw", source, snapshot_date)
-    processed = clean(raw)
-    path = data.write_snapshot(processed, "processed", source, meta["snapshot_date"])
-    return _metadata(processed, {**meta, "data_file": str(path)}, coverage)
 
 
 def load_source(source: str = DEFAULT_SOURCE, columns: Optional[list[str]] = None,
                 snapshot_date: Optional[str] = None) -> tuple[pd.DataFrame, dict]:
-    """读最新一版或指定日的底表，必要时只从同一天 raw 重建。"""
+    """读最新一版或指定日的归档；没有底表时读 raw。"""
     source = resolve_source_id(source)
-    _, _, coverage = SOURCE_HANDLERS[source]
-    day = snapshot_date if snapshot_date is not None else data.latest_snapshot_date(source)
-    raw_path = data.snapshot_path("raw", source, day)
-    processed_path = data.snapshot_path("processed", source, day)
-    if raw_path.is_file() and (not processed_path.is_file() or raw_path.stat().st_mtime_ns > processed_path.stat().st_mtime_ns):
-        prepare_source(source, day)
-    frame, meta = data.read_snapshot("processed", source, day)
-    meta = _metadata(frame, meta, coverage)
+    source_class = get_source(source)
+    day = snapshot_date if snapshot_date is not None else archive.latest_snapshot_date(source)
+    processed_path = archive.snapshot_path("processed", source, day)
+    layer = "processed" if processed_path.is_file() else "raw"
+    frame, meta = archive.read_snapshot(layer, source, day)
+    meta = _metadata(frame, meta, source_class.coverage)
+    meta["layer"] = layer
     return (frame.loc[:, columns] if columns is not None else frame), meta
 
 
-def load_from_connector(source: str = DEFAULT_SOURCE,
-                        columns: Optional[list[str]] = None) -> tuple[pd.DataFrame, dict]:
-    """实时读取并执行同样的清洗，不保存归档。"""
+def load_from_source(source: str = DEFAULT_SOURCE,
+                      columns: Optional[list[str]] = None) -> tuple[pd.DataFrame, dict]:
+    """实时读取来源，不落盘。"""
     source = resolve_source_id(source)
-    _, clean, _ = SOURCE_HANDLERS[source]
     raw, meta = fetch_raw(source)
-    frame = clean(raw)
-    return (frame.loc[:, columns] if columns is not None else frame), meta
+    return (raw.loc[:, columns] if columns is not None else raw), meta
+
+
+def all_sources() -> List[str]:
+    """已接入的来源 id。"""
+    return source_ids()

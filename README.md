@@ -8,43 +8,57 @@
 
 | 环节 | 内容 | 状态 |
 | --- | --- | --- |
-| ① 数据获取 | 从数据中台接口取采购入库数据，清洗后按日归档 | 已实现 |
+| ① 数据获取 | 读取上游导出的采购入库文件，原样归档 | 已实现 |
 | ② 识别机会 | 采购增量分析，识别采购量增长信号，产出谈判候选清单 | 已实现 |
 | ③ 分派执行 | 谈判候选分派给采购员，跟进执行与反馈 | 业务方案（见 `docs/`） |
 | ④ 降本统计 | 基于事实核算实际降本，输出统计报告和看板 | 业务方案（见 `docs/`） |
 
-当前已实现①②：采购入库取数、清洗、采购增量分析和报告导出。③④对应程序尚未实现，业务方案文档保存在 `docs/`。
+当前已实现①②：采购入库取数、归档、采购增量分析和报告导出。③④对应程序尚未实现，业务方案文档保存在 `docs/`。
 
-## 文件组织
+## 目录组织
+
+代码按业务环节分层，与 `docs/` 的目录一一对应：
+
+| 业务环节 | 文档 | 代码 |
+| --- | --- | --- |
+| 数据接入 | `docs/数据接入/` | `src/sources/`、`src/pipeline.py`、`src/archive.py` |
+| 降本识别 | `docs/降本识别/` | `src/analysis/` |
+| 降本分析 | `docs/降本分析/` | 待实现 |
+| 分派与反馈 | `docs/分派与反馈.md` | 待实现 |
 
 ```text
 scm-ana/
 ├── README.md
 ├── pyproject.toml                 # 依赖及本地模块安装
-├── .env.example                   # 本地凭证模板
+├── .local-data/                   # 上游导出的入库明细 Excel（不进版本库）
 ├── notebooks/
 │   └── 采购增量分析.ipynb          # 探索、推演和中间结果核对
 ├── src/
-│   ├── connectors/                # 按来源组织接口调用
-│   │   ├── procurement_inbound.py
+│   ├── paths.py                   # 项目路径与上海时区
+│   ├── archive.py                 # 归档读写：路径规则与原子写
+│   ├── pipeline.py                # 数据接入编排：取数 → 归档 → 读取
+│   ├── sources/                   # 数据接入层：每个数据源一个模块
+│   │   ├── __init__.py            # 来源注册表
+│   │   ├── procurement_inbound.py  # 采购入库来源口径
+│   │   ├── local_excel.py          # 本地 Excel 读取器
 │   │   └── library_parquet.py      # 备用资料库下载
-│   ├── cleaning/
-│   │   └── procurement_inbound.py  # 入库字段、类型、单位和年月转换
-│   ├── data.py                    # 通用的按日归档读写
-│   ├── pipeline.py                # 来源选择、取数、清洗和归档
-│   ├── procurement.py             # 稳定的采购增量计算
-│   ├── reporting/                 # Excel 和 HTML 导出
-│   ├── envfile.py                 # 凭证载入
-│   └── paths.py                   # 项目路径与上海时区
-├── scripts/                       # 命令行入口
-│   ├── sync_data.py
-│   ├── peek_api.py
-│   └── procurement_analysis.py
-├── docs/                          # 接口、数据约定、分析口径和业务方案
+│   ├── analysis/                  # 降本识别层：每个识别分析一个模块
+│   │   ├── __init__.py            # 分析注册表
+│   │   └── procurement_increment.py  # 采购增量分析
+│   └── reporting/                 # Excel 和 HTML 导出
+├── scripts/
+│   ├── sync_data.py               # 数据接入入口：归档
+│   └── run_analysis.py            # 降本识别入口：跑分析、导报告
+├── docs/
+│   ├── 数据接入/采购入库.md         # 来源文件、归档规则与清洗方案
+│   ├── 降本识别/采购增量分析.md
+│   ├── 降本分析/采购降本自动化核算方案.md
+│   ├── 降本分析/采购降本核算数据模型.md
+│   └── 分派与反馈.md
 ├── tests/                         # 离线测试
 ├── data/
-│   ├── raw/                       # 接口原始记录，按来源和抓取日归档
-│   └── processed/                 # 同日归档的清洗底表
+│   ├── raw/                       # 来源文件原样归档，按来源和归档日存放
+│   └── processed/                 # 业务侧清洗后的底表
 ├── outputs/                       # 生成的报告和看板
 └── assets/                        # 文档图示
 ```
@@ -59,11 +73,12 @@ data/raw/procurement-inbound/2026/2026-10/2026-10-25/data.parquet
 data/processed/procurement-inbound/2026/2026-10/2026-10-25/data.parquet
 ```
 
-日期表示上海时区的**抓取日**。每天保存一版完整快照，不跨日覆盖；同一天重复同步更新当天文件。
-raw 保留接口字段和金额单位，processed 做清洗。两层均带 `_source` 和 `_fetched_at`。
+路径统一为 `data/<层>/<来源>/<YYYY>/<YYYY-MM>/<YYYY-MM-DD>/data.parquet`，对所有来源通用。
+raw 是来源文件的原样转换：列名、取值和单位都不动，只追加 `_source` 和 `_fetched_at` 两列元数据。
+清洗由业务侧单独处理，底表写入 `data/processed/`；分析优先读底表，没有底表时直接读 raw。
 
-分析默认读取最新一版，可指定历史归档日。每天的全量快照不会合并累加。
-数据业务覆盖范围由记录里的日期计算，与抓取日分别展示。
+目录日期默认是转换当天（`--mode business-date` 时为业务日期）。每天保存一版完整快照，不跨日覆盖。
+分析默认读取最新一版，可指定历史归档日；每天的全量快照不会合并累加。
 
 ## 快速开始
 
@@ -72,22 +87,20 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
 
-cp .env.example .env  # 已有 .env 时跳过
-chmod 600 .env
-# 填写接口凭证后执行
+# 把上游导出的入库明细 Excel 放进 .local-data/ 后执行
 python scripts/sync_data.py --source procurement-inbound
-python scripts/procurement_analysis.py
+python scripts/run_analysis.py --analysis procurement-increment
 ```
 
 查看归档、读取历史版本：
 
 ```bash
 python scripts/sync_data.py --list
-python scripts/procurement_analysis.py --snapshot-date 2026-10-25 --dry-run
+python scripts/run_analysis.py --snapshot-date 2026-10-25 --dry-run
 ```
 
 `--snapshot-date` 选择数据版本；`--end-month` 选择业务分析结束月，两个参数含义不同。
-报告写入 `outputs/reports/<抓取日>/`，内容包含使用的归档路径和抓取时间。
+报告写入 `outputs/reports/<归档日>/`，内容包含使用的归档路径和转换时间。
 
 使用 notebooks：
 
@@ -101,16 +114,15 @@ python -m jupyterlab
 
 ```bash
 python -m unittest discover -s tests -v
-python -m connectors.procurement_inbound --self-test
+python -m sources.local_excel --read
 ```
 
 ## 文档
 
 | 内容 | 位置 |
 | --- | --- |
-| 归档规则、取数、读取和新增来源 | [数据接入](docs/数据接入.md) |
-| 入库接口参数、认证和字段 | [入库记录接口](docs/入库记录接口.md) |
-| 采购增量口径和报表字段 | [采购增量分析](docs/采购增量分析.md) |
-| 降本核算业务方案 | [采购降本自动化核算方案](docs/采购降本自动化核算方案.md) |
-| 核算数据模型建议 | [采购降本核算数据模型](docs/采购降本核算数据模型.md) |
+| 来源文件、归档规则、清洗方案、新增数据源 | [采购入库](docs/数据接入/采购入库.md) |
+| 采购增量口径和报表字段 | [采购增量分析](docs/降本识别/采购增量分析.md) |
+| 降本核算业务方案 | [采购降本自动化核算方案](docs/降本分析/采购降本自动化核算方案.md) |
+| 核算数据模型建议 | [采购降本核算数据模型](docs/降本分析/采购降本核算数据模型.md) |
 | 分派反馈规划 | [分派与反馈](docs/分派与反馈.md) |

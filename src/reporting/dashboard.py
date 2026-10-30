@@ -579,7 +579,7 @@ def export_html(result: Dict[str, Any], output_path: Path) -> Path:
     data_source_label = f"{meta.get('data_source', '采购入库')}明细"
     if boards:
         data_source_label += f"（{boards}）"
-    proposal_path = "docs/采购增量分析.md"
+    proposal_path = "docs/降本识别/采购增量分析.md"
 
     html = TEMPLATE.format(
         end_month=meta["window_end"],
@@ -610,4 +610,4 @@ def export_html(result: Dict[str, Any], output_path: Path) -> Path:
 
 
 if __name__ == "__main__":
-    print("本模块由 scripts/procurement_analysis.py 调用，不单独运行。")
+    print("本模块由 scripts/run_analysis.py 调用，不单独运行。")
