@@ -20,13 +20,17 @@ from openpyxl.utils import get_column_letter
 RULE_ROWS = [
     ("报表用途", "识别采购量持续增长且具备谈判价值的物料，形成月度谈判候选清单。"),
     ("分析范围", "仅覆盖检验、检验产品、诊断三个板块；以源数据最大采购年月为结束月份，向前取12个月。"),
+    ("供应商范围", "仅保留「财务内部外供应商类型 = 外部单位」的记录，关联单位之间不是市场议价关系，不进入候选。剔除的行数和金额见运行摘要。"),
+    ("采购量口径", "汇总「数量」，含退货冲减（退回供应商、采购退货为负数）。有数量无金额的记录（免费供货、配套耗材）计入数量但不计入金额。"),
+    ("金额口径", "汇总「采购不含税金额(万)」，求和前已包含红字冲减。金额为0的记录会拉低加权平均价，均价仅作参考。"),
     ("金额准入", "最近6个月累计采购不含税金额大于5万元的物料才进入后续分析。"),
     ("连续采购准入", "最近3个月存在零采购月份的物料直接排除，不参与优先级分类。"),
+    ("新引入", "前3个月平均采购量不大于0（新上量或前期净退货）的物料，没有增长基线，趋势指数留空，单列一档、不占谈判名额，按最近12个月采购金额排序。"),
     ("优先谈判", "采购量趋势指数大于等于20%，且最近1个月环比增长率大于等于10%或连续增长月数大于等于2。表示采购量已明显提升且近期增长仍在延续，应优先核实需求原因并准备谈判。"),
     ("观察", "未达到优先谈判条件，但采购量趋势指数大于等于10%或最近3个月采购量占比大于等于30%。表示已出现增长信号或近期需求集中，建议按月跟踪。"),
     ("不建议", "不满足优先谈判或观察条件。当前采购量增长信号不足，暂不建议因采购增量启动谈判。"),
     ("最近1个月环比增长率", "(本月采购量-上月采购量)/上月采购量；仅当上月采购量大于0时计算。"),
-    ("采购量趋势指数", "最近3个月平均采购量/前3个月平均采购量-1，用于判断近期采购量是否整体上台阶。"),
+    ("采购量趋势指数", "最近3个月平均采购量/前3个月平均采购量-1，用于判断近期采购量是否整体上台阶。基期为0时留空。基期极小时该指数会被放大，需结合采购量一起看。"),
     ("连续增长月数", "截至当前月，采购量环比连续为正的月份数。"),
     ("最近3个月采购量占比", "最近3个月采购总量/最近12个月采购总量，用于判断需求是否集中在近期释放。"),
     ("使用提示", "报表提供采购增量证据和优先级，不代替对一次性备货、项目采购、价格、替代供应商和质量表现的业务判断。"),
@@ -88,6 +92,14 @@ def _write_summary_sheet(writer, result: Dict[str, Any]) -> None:
         ("分析结束月份", meta["window_end"]),
         ("分析窗口", f"{meta['window_start']} ~ {meta['window_end']}（共 {result['config']['window_months']} 个月）"),
         ("板块范围", "、".join(result["config"]["boards"])),
+        ("供应商范围", meta.get("supplier_scope", "全部供应商")),
+    ]
+    if meta.get("supplier_excluded_rows"):
+        rows.append((
+            "因供应商范围剔除",
+            f"{meta['supplier_excluded_rows']:,} 行 / {meta['supplier_excluded_amount']:,.1f} 万元",
+        ))
+    rows += [
         ("金额准入门槛", f"最近 {result['config']['recent_filter_months']} 个月累计采购不含税金额 > {result['config']['min_recent_amount_wan']} 万元"),
         ("过滤后明细行数", meta["filtered_rows"]),
         ("覆盖物料数", meta["filtered_materials"]),
@@ -96,15 +108,14 @@ def _write_summary_sheet(writer, result: Dict[str, Any]) -> None:
         ("优先谈判覆盖金额（万元）", round(float(priority_amount.get("优先谈判", 0)), 1)),
         ("观察数", int(priority_counts.get("观察", 0))),
         ("不建议数", int(priority_counts.get("不建议", 0))),
+        ("新引入数", int(priority_counts.get("新引入", 0))),
     ]
 
-    # 数据溯源：抓取时间说明这一版数据何时落地，业务覆盖月份说明它含哪些月，两者分开看
+    # 数据溯源：归档日说明这一版数据的时点，业务覆盖月份说明它含哪些月，两者分开看
     if meta.get("data_source"):
         rows.append(("数据来源", meta["data_source"]))
     if meta.get("snapshot_date"):
         rows.append(("数据归档日", meta["snapshot_date"]))
-    if meta.get("fetched_at"):
-        rows.append(("数据抓取时间", str(meta["fetched_at"])))
     if meta.get("data_month_range"):
         rng = meta["data_month_range"]
         rows.append(("数据覆盖月份", f"{rng.get('start')} ~ {rng.get('end')}（{rng.get('count')} 个月）"))
@@ -127,8 +138,9 @@ def _write_summary_sheet(writer, result: Dict[str, Any]) -> None:
             cell.alignment = Alignment(vertical="center", wrap_text=True)
 
 
-def _add_chart_sheet(workbook, report_df: pd.DataFrame) -> None:
+def _add_chart_sheet(workbook, result: Dict[str, Any]) -> None:
     """图表页：优先级覆盖规模 + 优先谈判 Top 15。"""
+    report_df = result["report"]
     if "图表" in workbook.sheetnames:
         del workbook["图表"]
     chart_sheet = workbook.create_sheet("图表")
@@ -175,13 +187,8 @@ def _add_chart_sheet(workbook, report_df: pd.DataFrame) -> None:
     chart_sheet["A5"].number_format = "#,##0"
     chart_sheet["D5"].number_format = "#,##0.0"
 
-    priority_summary = (
-        report_df.groupby("谈判优先级", observed=True)
-        .agg(物料数=("物料编码", "size"), 采购金额万元=("最近12个月累计采购不含税金额(万)", "sum"))
-        .reindex(["优先谈判", "观察", "不建议"])
-        .fillna(0)
-        .reset_index()
-    )
+    priority_summary = result["priority_summary"].rename(columns={"采购金额": "采购金额万元"})
+    last_row = len(priority_summary) + 2          # 表头在第 2 行，数据行 3 开始
     for col_index, value in enumerate(["谈判优先级", "物料数", "采购金额(万元)"], start=10):
         chart_sheet.cell(2, col_index, value)
     for row_index, row in priority_summary.iterrows():
@@ -207,7 +214,7 @@ def _add_chart_sheet(workbook, report_df: pd.DataFrame) -> None:
         chart_sheet.cell(excel_row, 13, float(row["最近12个月累计采购不含税金额(万)"]))
         chart_sheet.cell(excel_row, 14, f"Top {row_index + 1}  {short_name}")
 
-    for row in chart_sheet.iter_rows(min_row=2, max_row=5, min_col=10, max_col=12):
+    for row in chart_sheet.iter_rows(min_row=2, max_row=last_row, min_col=10, max_col=12):
         for cell in row:
             cell.border = table_border
             cell.alignment = Alignment(vertical="center")
@@ -220,7 +227,7 @@ def _add_chart_sheet(workbook, report_df: pd.DataFrame) -> None:
             cell.fill = navy_fill
             cell.font = Font(bold=True, color="FFFFFF")
             cell.alignment = Alignment(horizontal="center", vertical="center")
-    for row_index in range(3, 6):
+    for row_index in range(3, last_row + 1):
         chart_sheet.cell(row_index, 12).number_format = "#,##0.0"
     for row_index in range(9, 24):
         chart_sheet.cell(row_index, 13).number_format = "#,##0.0"
@@ -234,9 +241,9 @@ def _add_chart_sheet(workbook, report_df: pd.DataFrame) -> None:
     priority_chart.height = 10
     priority_chart.width = 18
     priority_chart.add_data(
-        Reference(chart_sheet, min_col=12, min_row=2, max_row=5), titles_from_data=True
+        Reference(chart_sheet, min_col=12, min_row=2, max_row=last_row), titles_from_data=True
     )
-    priority_chart.set_categories(Reference(chart_sheet, min_col=10, min_row=3, max_row=5))
+    priority_chart.set_categories(Reference(chart_sheet, min_col=10, min_row=3, max_row=last_row))
     priority_chart.legend = None
     priority_chart.dataLabels = DataLabelList()
     priority_chart.dataLabels.showVal = True
@@ -299,7 +306,7 @@ def export_excel(result: Dict[str, Any], output_path: Path) -> Path:
             rule_sheet.row_dimensions[row[0].row].height = 42
 
     workbook = load_workbook(output_path)
-    _add_chart_sheet(workbook, report_df)
+    _add_chart_sheet(workbook, result)
     workbook.save(output_path)
     return output_path
 

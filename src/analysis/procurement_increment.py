@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from pipeline import DEFAULT_SOURCE, load_from_source, load_source
+from read_data import DEFAULT_SOURCE, read_inbound_meta
 
 #: 分析口径常量 —— 与方案文档一一对应，改动请同步方案文档
 TARGET_BOARDS: List[str] = ["检验", "检验产品", "诊断"]
@@ -20,6 +20,10 @@ MIN_RECENT_AMOUNT_WAN = 5.0
 RECENT_ZERO_MONTHS = 3
 TOP_N = 15
 
+#: 供应商范围：只保留市场交易，关联单位不是议价对象
+SUPPLIER_TYPE_COLUMN = "财务内部外供应商类型"
+EXTERNAL_SUPPLIER_TYPES: Tuple[str, ...] = ("外部单位",)
+
 #: 优先级阈值
 TREND_INDEX_PRIORITY = 0.20   # 优先谈判：采购量趋势指数门槛
 MOM_GROWTH_PRIORITY = 0.10    # 优先谈判：最近1个月环比增长率门槛
@@ -27,12 +31,15 @@ STREAK_PRIORITY = 2           # 优先谈判：连续增长月数门槛
 TREND_INDEX_WATCH = 0.10     # 观察：采购量趋势指数门槛
 RECENT_SHARE_WATCH = 0.30    # 观察：最近3个月采购量占比门槛
 
-PRIORITY_ORDER = {"优先谈判": 0, "观察": 1, "不建议": 2}
+#: 无基期物料单列一档，不占谈判名额（趋势指数无法计算，不参与增长排名）
+NEW_MATERIAL_LABEL = "新引入"
+PRIORITY_ORDER = {"优先谈判": 0, "观察": 1, "不建议": 2, NEW_MATERIAL_LABEL: 3}
+PRIORITY_LABELS: List[str] = list(PRIORITY_ORDER)
 
 ANALYSIS_COLUMNS: List[str] = [
     "板块", "物料编码", "物料名称", "规格", "主单位", "品牌", "主品牌",
     "一级分类", "二级分类", "三级分类", "四级分类", "五级分类",
-    "设备试剂分类", "进口&国产", "供应商名称",
+    "设备试剂分类", "进口&国产", "供应商名称", SUPPLIER_TYPE_COLUMN,
     "采购入库年份", "采购入库月份",
     "数量合计", "采购不含税金额(万)", "采购不含税单价",
 ]
@@ -54,12 +61,13 @@ REPORT_COLUMNS: List[str] = [
 @dataclass
 class Config:
     """一次运行的分析配置，便于复现与留痕。"""
-    source: str = DEFAULT_SOURCE          # 数据来源（当前为采购入库）
-    end_month: Optional[str] = None       # 业务结束月 YYYY-MM；None 表示取数据最大月
+    start_date: str = ""                      # 归档区间起（含），空表示全部归档日
+    end_date: str = ""                        # 归档区间止（含），空表示全部归档日
+    end_month: Optional[str] = None           # 业务结束月 YYYY-MM；None 表示取数据最大月
     window_months: int = ANALYSIS_WINDOW_MONTHS
     recent_filter_months: int = RECENT_FILTER_MONTHS
     min_recent_amount_wan: float = MIN_RECENT_AMOUNT_WAN
-    snapshot_date: Optional[str] = None  # 归档日 YYYY-MM-DD；None 读取最新归档
+    external_only: bool = True                # 只保留外部单位，排除关联交易
     boards: List[str] = None
 
     def __post_init__(self) -> None:
@@ -70,23 +78,16 @@ class Config:
 # --------------------------------------------------------------------------
 # 取数
 # --------------------------------------------------------------------------
-def load_source_data(cfg: Config, source: str = "local") -> Tuple[pd.DataFrame, Dict[str, Any]]:
+def load_source_data(cfg: Config) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """载入采购入库明细。
 
-    Args:
-        source: ``local`` 读 ``data/processed/``（默认，快且离线可用）；
-            ``live`` 直接读取来源的本地导出文件，不落本地。
+    读 ``data/raw/procurement-inbound/`` 下按出入库日期成档的 parquet，
+    按解析后的窗口拼接；某个归档日有业务侧清洗底表时优先读底表。
 
     Returns:
-        ``(DataFrame, meta)``，meta 记录实际使用的数据文件、抓取时间与覆盖范围。
+        ``(DataFrame, meta)``，meta 记录实际使用的窗口、日档、数据文件与覆盖月份。
     """
-    if source == "live":
-        if cfg.snapshot_date:
-            raise ValueError("实时取数不能指定历史归档日；请使用本地读取方式")
-        df, meta = load_from_source(cfg.source)
-    else:
-        df, meta = load_source(cfg.source, snapshot_date=cfg.snapshot_date)
-    return df, meta
+    return read_inbound_meta(cfg.start_date, cfg.end_date)
 
 
 # --------------------------------------------------------------------------
@@ -109,7 +110,7 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def clean_and_filter(df: pd.DataFrame, cfg: Config) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-    """板块过滤、字段清洗、12 个月窗口裁剪、最近 N 个月金额准入。"""
+    """板块过滤、供应商范围过滤、字段清洗、12 个月窗口裁剪、最近 N 个月金额准入。"""
     df = normalize_columns(df)
     available_cols = [c for c in ANALYSIS_COLUMNS if c in df.columns]
     missing = [c for c in ("板块", "物料编码", "数量合计", "采购不含税金额(万)") if c not in df.columns]
@@ -134,6 +135,23 @@ def clean_and_filter(df: pd.DataFrame, cfg: Config) -> Tuple[pd.DataFrame, Dict[
     source_df["年月"] = pd.to_datetime(
         source_df["年份"].astype(str) + "-" + source_df["月份"].astype(str).str.zfill(2) + "-01"
     )
+
+    # 供应商范围：关联单位之间不是市场议价关系，默认只保留外部单位。
+    # 排除量单独记录，报告里能看到「因为这条口径少了多少」，避免数据无声消失。
+    supplier_scope = "全部供应商"
+    excluded_rows, excluded_amount = 0, 0.0
+    if cfg.external_only and SUPPLIER_TYPE_COLUMN in source_df.columns:
+        keep = source_df[SUPPLIER_TYPE_COLUMN].isin(EXTERNAL_SUPPLIER_TYPES)
+        dropped = source_df.loc[~keep]
+        excluded_rows = int(len(dropped))
+        excluded_amount = float(dropped["采购不含税金额(万)"].sum())
+        source_df = source_df.loc[keep].copy()
+        supplier_scope = "仅外部单位"
+        if source_df.empty:
+            raise ValueError(
+                f"按「{SUPPLIER_TYPE_COLUMN}」只保留 {'/'.join(EXTERNAL_SUPPLIER_TYPES)} 后没有数据，"
+                "检查该列取值或关闭 external_only。"
+            )
 
     # 数据实际覆盖的业务月份（用于回溯时的覆盖度校验）
     available_months = sorted(
@@ -194,6 +212,9 @@ def clean_and_filter(df: pd.DataFrame, cfg: Config) -> Tuple[pd.DataFrame, Dict[
         "filtered_materials": int(analysis_df["物料编码"].nunique()),
         "data_month_start": data_month_start,
         "data_month_end": data_month_end,
+        "supplier_scope": supplier_scope,
+        "supplier_excluded_rows": excluded_rows,
+        "supplier_excluded_amount": round(excluded_amount, 1),
     }
     return analysis_df, meta
 
@@ -222,7 +243,7 @@ def build_monthly(analysis_df: pd.DataFrame, window_start_month: pd.Timestamp,
     monthly = monthly.merge(monthly_amount, on=["物料编码", "年月"], how="left")
     monthly["数量"] = monthly["数量"].fillna(0.0)
     monthly["采购不含税金额(万)"] = monthly["采购不含税金额(万)"].fillna(0.0)
-    monthly["月加权平均价"] = monthly["采购不含税金额(万)"] / monthly["数量"].replace(0, np.nan)
+    # 均价统一在 add_monthly_metrics 里按「元」计算，这里不再生成万元/件 的同名列
     return monthly
 
 
@@ -249,7 +270,12 @@ def add_monthly_metrics(group: pd.DataFrame) -> pd.DataFrame:
     group["最近1个月环比增长率"] = growth
     group["最近3个月平均采购量"] = quantity.rolling(3, min_periods=3).mean()
     group["前3个月平均采购量"] = quantity.shift(3).rolling(3, min_periods=3).mean()
-    group["采购量趋势指数"] = group["最近3个月平均采购量"] / group["前3个月平均采购量"] - 1
+    # 基期 <= 0（新引入，或前 3 个月净退货）时趋势指数无意义：留空而不是 inf/负值，
+    # inf 会同时满足「>=20%」和「降序排第一」，把新物料顶到优先谈判榜首。
+    baseline = group["前3个月平均采购量"]
+    group["采购量趋势指数"] = (
+        group["最近3个月平均采购量"] / baseline.where(baseline > 0) - 1
+    )
     group["连续增长月数"] = calc_positive_streak(growth)
     group["最近3个月采购量占比"] = (
         quantity.rolling(3, min_periods=3).sum() / quantity.rolling(12, min_periods=12).sum()
@@ -296,14 +322,14 @@ def compute_monthly(monthly: pd.DataFrame) -> pd.DataFrame:
 # 阶段三：优先级分类
 # --------------------------------------------------------------------------
 def classify_priority(row: pd.Series) -> str:
-    """三档分类：优先谈判 → 观察 → 不建议，命中前一档即止。"""
-    if (
-        row["采购量趋势指数"] >= TREND_INDEX_PRIORITY
-        and (
-            row["最近1个月环比增长率"] >= MOM_GROWTH_PRIORITY
-            or row["连续增长月数"] >= STREAK_PRIORITY
-        )
-        and row["最近3个月零采购月份"] == 0
+    """四档分类：新引入单列 → 优先谈判 → 观察 → 不建议，命中前一档即止。"""
+    # 前 3 个月没有正采购 = 没有增长基线，趋势指数为空。这类物料是「新上量」或
+    # 前期净退货，与「采购量增长」不是一回事，单独成档、不占谈判名额。
+    if not (row["前3个月平均采购量"] > 0):
+        return NEW_MATERIAL_LABEL
+    if row["采购量趋势指数"] >= TREND_INDEX_PRIORITY and (
+        row["最近1个月环比增长率"] >= MOM_GROWTH_PRIORITY
+        or row["连续增长月数"] >= STREAK_PRIORITY
     ):
         return "优先谈判"
     if row["采购量趋势指数"] >= TREND_INDEX_WATCH or row["最近3个月采购量占比"] >= RECENT_SHARE_WATCH:
@@ -326,9 +352,11 @@ def build_report(monthly: pd.DataFrame, core_supplier: pd.DataFrame) -> pd.DataF
 
     latest["谈判优先级"] = latest.apply(classify_priority, axis=1)
     latest["_排序"] = latest["谈判优先级"].map(PRIORITY_ORDER)
+    # 趋势指数为空的新引入物料排在档内最后，用累计金额兜底排序
     latest = latest.sort_values(
-        ["_排序", "采购量趋势指数", "最近3个月采购量占比"],
-        ascending=[True, False, False],
+        ["_排序", "采购量趋势指数", "最近12个月累计采购不含税金额(万)", "最近3个月采购量占比"],
+        ascending=[True, False, False, False],
+        na_position="last",
     ).drop(columns=["_排序"]).reset_index(drop=True)
 
     cols = [c for c in REPORT_COLUMNS if c in latest.columns]
@@ -338,9 +366,9 @@ def build_report(monthly: pd.DataFrame, core_supplier: pd.DataFrame) -> pd.DataF
 # --------------------------------------------------------------------------
 # 主流程
 # --------------------------------------------------------------------------
-def run_analysis(cfg: Config, source: str = "local") -> Dict[str, Any]:
+def run_analysis(cfg: Config) -> Dict[str, Any]:
     """执行完整分析，返回各阶段结果。"""
-    df, data_meta = load_source_data(cfg, source=source)
+    df, data_meta = load_source_data(cfg)
     analysis_df, meta = clean_and_filter(df, cfg)
 
     window_start = pd.Timestamp(meta["window_start"] + "-01")
@@ -355,18 +383,18 @@ def run_analysis(cfg: Config, source: str = "local") -> Dict[str, Any]:
         report_df.groupby("谈判优先级", observed=True)
         .agg(物料数=("物料编码", "size"),
              采购金额=("最近12个月累计采购不含税金额(万)", "sum"))
-        .reindex(list(PRIORITY_ORDER))
+        .reindex(PRIORITY_LABELS)
         .fillna(0)
         .reset_index()
     )
 
     # 数据溯源信息跟着结果走，便于报告标注「用的是哪一版数据」
-    meta["data_source"] = data_meta.get("source", cfg.source)
+    meta["data_source"] = data_meta.get("source", DEFAULT_SOURCE)
     meta["data_file"] = data_meta.get("data_file")
     meta["snapshot_date"] = data_meta.get("snapshot_date")
-    meta["fetched_at"] = data_meta.get("fetched_at")
     meta["data_month_range"] = data_meta.get("data_month_range", {})
-    meta["read_from"] = "本地数据仓" if source != "live" else "来源实时读取"
+    meta["read_from"] = "采购入库归档"
+    meta["new_material_count"] = int((report_df["谈判优先级"] == NEW_MATERIAL_LABEL).sum())
 
     return {
         "config": asdict(cfg),

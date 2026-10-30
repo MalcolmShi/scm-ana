@@ -1,7 +1,14 @@
-"""归档层：按来源和归档日读写 parquet 归档。
+"""存储层：parquet 归档的路径规则与读写。
 
-路径规则 ``data/<层>/<来源>/<YYYY>/<YYYY-MM>/<YYYY-MM-DD>/data.parquet`` 对所有来源通用，
-不包含来源读取和采购业务逻辑。来源实现在 ``src/sources/``。
+只懂「文件怎么摆、怎么写不坏」，不懂采购业务，也不懂某个来源的字段口径：
+
+    data/<层>/<来源>/<YYYY>/<YYYY-MM>/<YYYY-MM-DD>/data.parquet
+
+- 层只有 ``raw``（来源原样）和 ``processed``（业务侧清洗底表）
+- 写入原子替换当天文件，写失败不留半个文件
+- 读只按路径读，不做列改名校验
+
+来源口径在 ``src/sources/``，对外取数在 ``src/read_data.py``。
 """
 from __future__ import annotations
 
@@ -12,6 +19,7 @@ from pathlib import Path
 from typing import Optional
 
 import pandas as pd
+import pyarrow.parquet as pq
 
 from paths import DATA_ROOT, TIMEZONE
 
@@ -99,6 +107,14 @@ def write_snapshot(frame: pd.DataFrame, layer: str, source: str, snapshot_date: 
     finally:
         temporary.unlink(missing_ok=True)
     return path
+
+
+def row_count(layer: str, source: str, snapshot_date: str) -> int:
+    """只读 parquet 文件尾的元数据取行数，不加载列数据。"""
+    path = snapshot_path(layer, source, snapshot_date)
+    if not path.is_file():
+        raise DataStoreError(f"归档不存在：{path}")
+    return pq.ParquetFile(path).metadata.num_rows
 
 
 def read_snapshot(layer: str, source: str, snapshot_date: Optional[str] = None,

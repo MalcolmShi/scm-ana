@@ -1,21 +1,31 @@
 [build-system]
-requires = ["setuptools>=68"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "scm-ana"
 version = "0.1.0"
 description = "供应链采购与降本数据分析"
+readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["pandas>=2.1", "numpy>=1.24", "openpyxl>=3.1", "pyarrow>=14"]
+dependencies = [
+    "pandas>=2.1",
+    "numpy>=1.24",
+    "openpyxl>=3.1",
+    "pyarrow>=14",
+]
 
-[project.optional-dependencies]
-notebooks = ["jupyterlab>=4", "ipykernel>=6"]
+# 开发/分析工具：uv 默认同步 dev 组，部署时用 uv sync --no-dev 跳过
+[dependency-groups]
+dev = [
+    "jupyterlab>=4",
+    "ipykernel>=6",
+]
 
-[tool.setuptools]
-package-dir = {"" = "src"}
-py-modules = ["archive", "pipeline", "paths"]
+# src 布局：src/ 下同时有顶层模块（read_data.py 等）和包（sources/ 等）
+[tool.hatch.build.targets.wheel]
+only-include = ["src"]
+sources = ["src"]
 
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["analysis*", "reporting*", "sources*"]
+[tool.hatch.build.targets.sdist]
+include = ["src", "README.md"]
