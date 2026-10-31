@@ -12,7 +12,7 @@
     ``sync_export()`` 读 ``.local-data/`` 下的入库明细 Excel，原样转成日档写入 ``raw``：
     列名、取值、单位都不动，只追加 ``_source``、``_fetched_at`` 两列。
 
-口径与方案见 ``docs/数据接入/采购入库.md``。
+口径与方案见 ``notebooks/数据清洗/采购入库接入及清洗.md``。
 """
 from __future__ import annotations
 

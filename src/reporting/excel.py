@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """Excel 报告导出 —— 报告、月度数据、规则说明、图表四个工作表。
 
-样式与字段口径沿用 ``notebooks/采购增量分析.ipynb`` 中已确认的实现，
-方案见 ``docs/降本识别/采购增量分析.md`` 第六节。
+样式与字段口径沿用 ``notebooks/采购增量分析/采购增量分析.ipynb`` 中已确认的实现，
+方案见 ``notebooks/采购增量分析/采购增量分析.md`` 第六节。
 """
 from __future__ import annotations
 

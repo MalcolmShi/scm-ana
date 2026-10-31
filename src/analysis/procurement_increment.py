@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""采购增量分析计算。口径见 docs/降本识别/采购增量分析.md，探索见 notebooks/采购增量分析.ipynb。"""
+"""采购增量分析计算。口径见 notebooks/采购增量分析/采购增量分析.md，验证见同目录 notebook。"""
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict

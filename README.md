@@ -10,65 +10,57 @@
 | --- | --- | --- |
 | ① 数据获取 | 读取上游导出的采购入库文件，原样归档 | 已实现 |
 | ② 识别机会 | 采购增量分析，识别采购量增长信号，产出谈判候选清单 | 已实现 |
-| ③ 分派执行 | 谈判候选分派给采购员，跟进执行与反馈 | 业务方案（见 `docs/`） |
-| ④ 降本统计 | 基于事实核算实际降本，输出统计报告和看板 | 业务方案（见 `docs/`） |
+| ③ 分派执行 | 谈判候选分派给采购员，跟进执行与反馈 | 业务方案（见 [分派与反馈](分派与反馈.md)） |
+| ④ 降本统计 | 基于事实核算实际降本，输出统计报告和看板 | 方案已确认（见 [采购降本自动化核算方案](notebooks/采购降本统计/采购降本自动化核算方案.md)） |
 
-当前已实现①②：采购入库取数、归档、采购增量分析和报告导出。③④对应程序尚未实现，业务方案文档保存在 `docs/`。
+## 分析场景
+
+**场景是本项目的一等单元**：一个场景 = 一个可复跑的分析产品，方案确认与研究验证在 `notebooks/<场景>/`，稳定代码在 `src/`，入口在 `scripts/`。每个场景一份 `分析方案.md` 从第一步写到第五步（五节追加式，见 [模板](.agents/skills/data-ana/templates/分析方案.md)；存量方案文档下次动工时并入）。
+
+| 场景 | 状态 | 入口 | 交付物 |
+| --- | --- | --- | --- |
+| [采购增量分析](notebooks/采购增量分析/采购增量分析.md) | 已落地 | `uv run python scripts/run_analysis.py` | `outputs/reports/…采购增量分析报告.xlsx`（谈判候选四档） |
+| [采购降本统计](notebooks/采购降本统计/采购降本自动化核算方案.md) | 方案已确认 | 待落地（DDL + 核算脚本） | 月度降本统计报表（六类核算口径） |
+
+`notebooks/数据清洗/` 是数据源级共享工作区（不属于任何场景）：接入方案与清洗研究放这里，产出被所有场景复用。
+
+新增分析场景：按 [分析方案模板](.agents/skills/data-ana/templates/分析方案.md) 建文档，从第一步（业务理解与指标构建）开始；五步方法见 [data-ana SKILL.md](.agents/skills/data-ana/SKILL.md)。
 
 ## 目录组织
-
-代码按业务环节分层，与 `docs/` 的目录一一对应：
-
-| 业务环节 | 文档 | 代码 |
-| --- | --- | --- |
-| 数据接入 | `docs/数据接入/` | `src/archive.py`、`src/sources/`、`src/read_data.py` |
-| 降本识别 | `docs/降本识别/` | `src/analysis/` |
-| 降本分析 | `docs/降本分析/` | 待实现 |
-| 分派与反馈 | `docs/分派与反馈.md` | 待实现 |
 
 ```text
 scm-ana/
 ├── README.md
 ├── pyproject.toml                 # 项目元数据、依赖与 hatchling 构建配置
-├── uv.lock                        # 依赖锁定，uv sync 生成，进版本库
-├── .python-version                # 固定 Python 3.12
+├── uv.lock / .python-version      # 依赖锁定（进版本库）/ 固定 Python 3.12
 ├── .local-data/                   # 上游导出的入库明细 Excel（不进版本库）
-├── notebooks/
-│   ├── 采购增量分析.ipynb          # 探索、推演和中间结果核对
-│   └── 数据源测试.ipynb            # 数据源核对：归档清单、字段、质量
-├── src/
+├── notebooks/                     # 按场景组织：方案确认 + 研究验证
+│   ├── 采购增量分析/               #   方案 md + 验证 notebook
+│   ├── 采购降本统计/               #   核算方案 md + 数据模型 md
+│   └── 数据清洗/                  #   数据源级共享：接入方案 + 清洗研究 notebook
+├── .agents/skills/data-ana/       # data-ana 技能（ZCode 自动发现；五步法）
+│   ├── SKILL.md                   #   进入方式 + 三条铁律 + 五步路由
+│   ├── references/                #   各步方法：01~04 已定，05 随场景推进补齐
+│   └── templates/                 #   分析方案 / 数据清洗模版 / 指标验证模版
+├── src/                           # 代码分层：与场景解耦的引擎
 │   ├── paths.py                   # 项目路径与上海时区
 │   ├── archive.py                 # 存储层：parquet 归档的路径规则与读写
 │   ├── read_data.py               # 取数门面：read_inbound(start, end, columns)
 │   ├── pipeline.py                # 流水线：analyze()，取数 → 分析 → 导出
-│   ├── sources/                   # 数据源层：每个来源一个模块
-│   │   ├── __init__.py
-│   │   └── procurement_inbound.py  # 采购入库：口径 + 取数 + Excel 导入
-│   ├── analysis/                  # 分析层：每个分析一个模块
-│   │   ├── __init__.py
-│   │   └── procurement_increment.py  # 采购增量分析
-│   └── reporting/                 # 导出层
-│       ├── __init__.py
-│       └── excel.py               # Excel 报告
+│   ├── sources/procurement_inbound.py  # 数据源层：口径 + 取数 + Excel 导入（一来源一模块）
+│   ├── analysis/procurement_increment.py  # 分析层：一场景一模块（Config + run_analysis + export）
+│   └── reporting/excel.py         # 导出层：Excel 报告
 ├── scripts/
 │   ├── sync_data.py               # 导入入口：Excel 导出 → raw 日档
-│   └── run_analysis.py            # 分析入口：跑分析、导报告
-├── docs/
-│   ├── 数据接入/采购入库.md         # 来源文件、归档规则与清洗方案
-│   ├── 降本识别/采购增量分析.md
-│   ├── 降本分析/采购降本自动化核算方案.md
-│   ├── 降本分析/采购降本核算数据模型.md
-│   └── 分派与反馈.md
-├── tests/                         # 离线测试：test_archive / test_inbound
+│   └── run_analysis.py            # 分析入口：跑增量分析、导报告
+├── tests/                         # 离线测试：test_archive / test_inbound / test_increment
 ├── data/
-│   ├── raw/                       # 来源文件原样归档，按来源和归档日存放
-│   └── processed/                 # 业务侧清洗后的底表
-├── outputs/                       # 生成的报告和看板
+│   ├── raw/                       # 来源文件原样归档，按来源和业务日存放
+│   └── processed/                 # 清洗底表（清洗规则确认后由 src/clean 落地写入）
 └── assets/                        # 文档图示
 ```
 
-`src/` 下直接放 Python 模块，由 `uv sync` 以 editable 方式装进 `.venv`，脚本和 notebooks 直接 `import read_data`，
-不修改 `sys.path`。新增分析从 notebook 开始，稳定计算再提取到 `src/`。业务流程用于解释工作，不再用于划分顶层目录。
+`src/` 下直接放 Python 模块，由 `uv sync` 以 editable 方式装进 `.venv`，脚本和 notebooks 直接 `import read_data`，不修改 `sys.path`。新增分析从 notebook 开始，业务确认后提取到 `src/`。
 
 ## 按日归档
 
@@ -114,8 +106,6 @@ read_inbound("2026-01", "2026-09")  # 一个范围，两边都含
 read_inbound(columns=["出入库日期", "数量"])   # 全部日期 + 列裁剪
 ```
 
-核对字段和覆盖用 `notebooks/数据源测试.ipynb`。
-
 `--start-date` / `--end-date` 选择取数窗口（写法和 `read_inbound` 一致），`--end-month` 选择业务结束月，
 `--window-months` 决定分析窗口长度。报告写入 `outputs/reports/<业务结束日>/`，内容包含数据文件与转换时间。
 
@@ -123,7 +113,7 @@ read_inbound(columns=["出入库日期", "数量"])   # 全部日期 + 列裁剪
 
 ```bash
 uv run python -m ipykernel install --user --name scm-ana --display-name 'scm-ana'
-uv run jupyter lab notebooks/数据源测试.ipynb
+uv run jupyter lab notebooks/采购增量分析/采购增量分析.ipynb
 ```
 
 在 Jupyter 或 VS Code 中选择 `scm-ana` 内核（不要选其他环境的内核，否则导入不到 `read_data`）。离线验证：
@@ -136,8 +126,9 @@ uv run python -m unittest discover -s tests -t tests
 
 | 内容 | 位置 |
 | --- | --- |
-| 来源文件、归档规则、清洗方案、新增数据源 | [采购入库](docs/数据接入/采购入库.md) |
-| 采购增量口径和报表字段 | [采购增量分析](docs/降本识别/采购增量分析.md) |
-| 降本核算业务方案 | [采购降本自动化核算方案](docs/降本分析/采购降本自动化核算方案.md) |
-| 核算数据模型建议 | [采购降本核算数据模型](docs/降本分析/采购降本核算数据模型.md) |
-| 分派反馈规划 | [分派与反馈](docs/分派与反馈.md) |
+| 采购增量分析：口径与报表字段 / 研究验证 | [方案](notebooks/采购增量分析/采购增量分析.md) · [验证 notebook](notebooks/采购增量分析/采购增量分析.ipynb) |
+| 采购降本统计：核算方案 / 数据模型 | [核算方案](notebooks/采购降本统计/采购降本自动化核算方案.md) · [数据模型](notebooks/采购降本统计/采购降本核算数据模型.md) |
+| 数据接入与清洗方案（数据源级，含新增来源指引） | [采购入库接入及清洗](notebooks/数据清洗/采购入库接入及清洗.md) · [清洗研究](notebooks/数据清洗/采购入库数据清洗.ipynb) |
+| 数据分析技能方法论（五步法 + 三条铁律） | [data-ana SKILL.md](.agents/skills/data-ana/SKILL.md) |
+| 技能设计思路调研 | [数据分析技能设计思路调研](数据分析技能设计思路调研.md) |
+| 分派反馈规划 | [分派与反馈](分派与反馈.md) |

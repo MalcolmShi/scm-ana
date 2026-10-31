@@ -2,7 +2,7 @@
 """分析：跑采购增量分析，导出 Excel 报告到 outputs/reports/<归档日>/。
 
 取数与计算见 src/read_data.py、src/analysis/procurement_increment.py，
-编排见 src/pipeline.py；口径见 docs/降本识别/采购增量分析.md。
+编排见 src/pipeline.py；口径见 notebooks/采购增量分析/采购增量分析.md。
 """
 from __future__ import annotations
 
