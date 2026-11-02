@@ -16,13 +16,10 @@ metadata:
   tags: [visualization, html, slides, dashboard, infographic]
 ---
 
-> **本项目（scm-ana）的收口约定，覆盖下文默认值：**
-> - 产物写 `outputs/dashboard/<场景>/<业务结束日>.html`，不写 `~/Downloads/`。
-> - 数据来自 `data/outputs/<场景>/…/data.json`，**必须内嵌成 `var VIZ_DATA = {...}`**；
->   不要在页面里 `fetch('data.json')` —— 双击 `file://` 打开会被浏览器 CORS 拦掉。
-> - 只出**单文件静态网页**：不部署、不起本地服务、不引外部数据接口。
-> - 中文正文用 Noto Sans SC（与 Inter 并列加载）；语义色与口径约定见
->   `.agents/skills/data-ana/SKILL.md` 的第五步。
+> **本项目约定：**
+> - 根据用户确认的交付方式构建；采购增量当前使用仅监听本机的服务和 DuckDB 下钻，不强制静态单文件或内嵌 JSON。
+> - 如果用户明确要独立静态文件，再使用下文单文件骨架及内嵌数据方式。
+> - 颜色方向、单位、精度和空值语义遵循 `.agents/skills/data-ana/SKILL.md` 与场景方案。
 
 # Visualize
 

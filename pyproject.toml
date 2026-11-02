@@ -13,6 +13,7 @@ dependencies = [
     "numpy>=1.24",
     "openpyxl>=3.1",
     "pyarrow>=14",
+    "duckdb>=1.5.6",
 ]
 
 # 开发/分析工具：uv 默认同步 dev 组，部署时用 uv sync --no-dev 跳过

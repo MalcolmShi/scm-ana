@@ -15,9 +15,8 @@ from typing import Any, Dict, Optional, Tuple
 
 import pandas as pd
 
-import archive
 from paths import TIMEZONE
-from sources.procurement_inbound import DATE_COLUMN, SOURCE_ID, select_days
+DATE_COLUMN = "出入库日期"
 
 #: 业务金额列（含税口径，业务确认 2026-11-02：一律用含税对）
 AMOUNT_COLUMN = "采购金额(万)"
@@ -87,7 +86,7 @@ def clean_inbound(frame: pd.DataFrame, drop_duplicates: bool = False,
 
     规则与 ``数据清洗确认.ipynb`` 总账一致（对拍基准）：
     ① 文本列 strip + 去 ``\\r\\n\\t``；② 供应商类型空值填「外部单位」；
-    ③ 含税单价空值 ← 购退单价；④ 出入库日期 → 日期类型；
+    ③ 含税单价为空或为负时，使用非空购退单价；④ 出入库日期 → 日期类型；
     ⑤ 整行重复默认保留（项二待业务定夺）；⑥ 采购模式去"合同"后缀归一。
     """
     clean = frame.copy()
@@ -111,18 +110,19 @@ def clean_inbound(frame: pd.DataFrame, drop_duplicates: bool = False,
 
     # ③ 供应商类型：源列改名定标准名，空值填「外部单位」
     if SUPPLIER_TYPE_SOURCE not in clean.columns:
-        clean[SUPPLIER_TYPE_SOURCE] = pd.NA
+        raise KeyError(f"raw 缺少必需字段：{SUPPLIER_TYPE_SOURCE}")
     supplier_filled = int(clean[SUPPLIER_TYPE_SOURCE].isna().sum())
     clean[SUPPLIER_TYPE_SOURCE] = _fill_text(clean[SUPPLIER_TYPE_SOURCE], SUPPLIER_TYPE_FILL)
     clean = clean.rename(columns={SUPPLIER_TYPE_SOURCE: SUPPLIER_TYPE})
 
-    # ④ 含税单价空值 ← 购退单价（全部为退回供应商行）
+    # ④ 含税单价为空或为负时，用非空购退单价补正
     price_filled = 0
     if PRICE_FILL_SOURCE in clean.columns:
-        price_filled = int(clean[PRICE_COLUMN].isna().sum())
-        clean[PRICE_COLUMN] = clean[PRICE_COLUMN].fillna(clean[PRICE_FILL_SOURCE])
-    else:
-        price_filled = int(clean[PRICE_COLUMN].isna().sum())
+        price = pd.to_numeric(clean[PRICE_COLUMN], errors="raise").astype("Float64")
+        replacement = pd.to_numeric(clean[PRICE_FILL_SOURCE], errors="raise").astype("Float64")
+        fill = (price.isna() | price.lt(0)) & replacement.notna()
+        price_filled = int(fill.sum())
+        clean[PRICE_COLUMN] = price.where(~fill, replacement)
 
     # ⑤ 采购模式：去"合同"后缀归一，空值标「未标注」；源列不进底表
     if MODE_SOURCE not in clean.columns:
@@ -162,42 +162,3 @@ def clean_inbound(frame: pd.DataFrame, drop_duplicates: bool = False,
         "duplicates_dropped": rows_before - len(result) if drop_duplicates else 0,
     }
     return result, audit
-
-
-def build_processed(start: str = "", end: str = "", drop_duplicates: bool = False,
-                    dry_run: bool = False) -> Dict[str, Any]:
-    """逐日读 raw、清洗、写 processed 归档（分区规则与 raw 一致）。
-
-    Args:
-        start/end: 窗口，写法同取数（YYYY / YYYY-MM / YYYY-MM-DD）；默认全部归档日。
-        drop_duplicates: 是否剔除整行重复（项二待业务定夺，默认保留）。
-        dry_run: 只清洗校验、不写文件。
-    """
-    days = select_days(start, end)
-    if not days:
-        raise archive.DataStoreError(f"raw 在 {start or '最早'} ~ {end or '最新'} 区间没有归档日")
-
-    per_day: Dict[str, Dict[str, Any]] = {}
-    for day in days:
-        frame, _ = archive.read_snapshot("raw", SOURCE_ID, day)
-        cleaned, audit = clean_inbound(frame, drop_duplicates=drop_duplicates)
-        if not dry_run:
-            archive.write_snapshot(cleaned, "processed", SOURCE_ID, day, check_fetched_at=False)
-        per_day[day] = audit
-
-    totals = {
-        "rows_before": sum(a["rows_before"] for a in per_day.values()),
-        "rows_after": sum(a["rows_after"] for a in per_day.values()),
-        "amount_before_wan": round(sum(a["amount_before_wan"] for a in per_day.values()), 1),
-        "amount_after_wan": round(sum(a["amount_after_wan"] for a in per_day.values()), 1),
-        "text_fixed": sum(a["text_fixed"] for a in per_day.values()),
-        "supplier_type_filled": sum(a["supplier_type_filled"] for a in per_day.values()),
-        "price_filled": sum(a["price_filled"] for a in per_day.values()),
-        "mode_normalized": sum(a["mode_normalized"] for a in per_day.values()),
-        "duplicate_rows": sum(a["duplicate_rows"] for a in per_day.values()),
-        "duplicates_dropped": sum(a["duplicates_dropped"] for a in per_day.values()),
-    }
-    return {
-        "source": SOURCE_ID, "days": days, "per_day": per_day, "totals": totals,
-        "status": "dry-run" if dry_run else "synced",
-    }

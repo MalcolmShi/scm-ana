@@ -6,8 +6,7 @@ from unittest.mock import patch
 
 import pandas as pd
 
-import archive
-from clean import build_processed, clean_inbound
+from clean.procurement_inbound import clean_inbound
 from clean.procurement_inbound import STANDARD_COLUMNS, UPDATED_AT_COLUMN
 from helpers import inbound_row, make_temp_dir
 
@@ -78,53 +77,19 @@ class CleanTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             clean_inbound(raw)
 
+    def test_negative_price_uses_return_price_when_available(self):
+        raw = self.raw.copy()
+        raw.loc[0, ["采购单价", "购退单价"]] = [-10, 88.5]
+        raw.loc[1, ["采购单价", "购退单价"]] = [-10, None]
+        cleaned, audit = clean_inbound(raw)
+        self.assertEqual(cleaned.loc[0, "采购单价"], 88.5)
+        self.assertEqual(cleaned.loc[1, "采购单价"], -10)
+        self.assertEqual(audit["price_filled"], 2)
 
-class BuildProcessedTests(unittest.TestCase):
-    def setUp(self):
-        root = make_temp_dir(self)
-        p = patch.object(archive, "DATA_ROOT", root)
-        p.start()
-        self.addCleanup(p.stop)
-        self.raw = with_standard_columns(pd.DataFrame(
-            [dirty_row(), dirty_row(出入库日期="2026-09-29", 物料编码="00456")]))
+    def test_missing_finance_supplier_column_fails(self):
+        with self.assertRaisesRegex(KeyError, "财务内部外供应商类型"):
+            clean_inbound(self.raw.drop(columns="财务内部外供应商类型"))
 
-    def write_raw(self):
-        for day, part in self.raw.groupby("出入库日期"):
-            archive.write_snapshot(part.reset_index(drop=True), "raw", "procurement-inbound", day,
-                                   check_fetched_at=False)
-
-    def test_build_writes_processed_per_day(self):
-        self.write_raw()
-        meta = build_processed()
-        self.assertEqual(meta["days"], ["2026-09-29", "2026-09-30"])
-        self.assertEqual(meta["status"], "synced")
-        self.assertEqual(meta["totals"]["rows_after"], 2)
-        cleaned = pd.read_parquet(archive.snapshot_path("processed", "procurement-inbound", "2026-09-29"))
-        self.assertEqual(list(cleaned.columns), STANDARD_COLUMNS + [UPDATED_AT_COLUMN])
-        self.assertEqual(cleaned.loc[0, "供应商类型"], "外部单位")
-        # 逐日清洗 = 整窗清洗：金额守恒
-        self.assertAlmostEqual(meta["totals"]["amount_before_wan"],
-                               meta["totals"]["amount_after_wan"], places=1)
-
-    def test_dry_run_writes_nothing(self):
-        self.write_raw()
-        meta = build_processed(dry_run=True)
-        self.assertEqual(meta["status"], "dry-run")
-        self.assertEqual(archive.list_snapshots("procurement-inbound", "processed"), [])
-
-    def test_explicit_layer_reads(self):
-        """显式接口：read_raw / read_processed 各读各的层，缺档不静默换层。"""
-        self.write_raw()
-        from sources.procurement_inbound import read_processed, read_raw
-        frame, meta = read_raw("2026-09-29")
-        self.assertEqual(meta["layer"], "raw")
-        self.assertIn("财务内部外供应商类型", frame.columns)
-        with self.assertRaises(archive.DataStoreError):
-            read_processed("2026-09-29")          # 还没建底表，直接报错不回退 raw
-        build_processed(start="2026-09-29")
-        frame, meta = read_processed("2026-09-29")
-        self.assertEqual(meta["layer"], "processed")
-        self.assertIn("供应商类型", frame.columns)
 
 
 if __name__ == "__main__":

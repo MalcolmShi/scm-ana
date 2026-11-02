@@ -39,3 +39,6 @@ data/sync.log
 
 # 上游导出的原始文件
 .local-data/
+
+# 本地 DuckDB 数据库（业务数据）
+/data/*.duckdb*

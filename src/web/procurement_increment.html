@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="theme-dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>采购增量分析</title>
+  <!-- ADD LANGUAGE FONTS IF NEEDED: e.g. Noto Sans KR for Korean, Noto Sans JP for Japanese -->
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { interpolate-size: allow-keywords; } /* Enable smooth height:auto transitions (Chrome 129+) */
+
+    /* ===== THEMES (class-based ONLY — no @media prefers-color-scheme) ===== */
+    html.theme-dark {
+      --bg: #0A0A0A; --surface: #141414; --surface-hover: #1C1C1C;
+      --border: rgba(255,255,255,0.04);
+      --text: #EDEDED; --text-secondary: #888;
+      --accent: #3b82f6; --accent-secondary: #8b5cf6;
+      --positive: #10b981; --negative: #f43f5e; --warning: #f59e0b;
+    }
+    html.theme-light {
+      --bg: #FAFAF9; --surface: #FFFFFF; --surface-hover: #F5F5F4;
+      --border: rgba(0,0,0,0.06);
+      --text: #0f172a; --text-secondary: #64748b;
+      --accent: #2563eb; --accent-secondary: #7c3aed;
+      --positive: #059669; --negative: #e11d48; --warning: #d97706;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg); color: var(--text);
+      line-height: 1.6; -webkit-font-smoothing: antialiased;
+      letter-spacing: -0.01em; font-feature-settings: 'cv11', 'ss01';
+      transition: background 0.3s, color 0.3s;
+      scrollbar-gutter: stable;
+    }
+    h1,h2,h3,h4,h5,h6 { 
+      color: var(--text); 
+      letter-spacing: -0.03em; 
+      line-height: 1.08;
+      text-wrap: balance;
+    }
+    h1 { font-weight: 700; }
+    h2 { font-weight: 600; }
+    body, p, li, td, th, span, label { font-weight: 400; }
+    p,li,td,th,span,label { color: var(--text); }
+    .text-secondary { color: var(--text-secondary); }
+
+    /* ===== CARD ===== */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 24px;
+      transition: box-shadow 0.2s ease;
+    }
+    .card:hover {
+      box-shadow: 0 0 0 1px var(--border), 0 8px 16px rgba(0,0,0,0.08);
+    }
+
+    /* ===== ANIMATIONS (CSS-first — always reliable) ===== */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-40px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(40px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .animate { animation: fadeInUp 0.6s ease-out both; }
+    .animate.delay-1 { animation-delay: 0.1s; }
+    .animate.delay-2 { animation-delay: 0.2s; }
+    .animate.delay-3 { animation-delay: 0.3s; }
+    .animate.delay-4 { animation-delay: 0.4s; }
+    .animate.delay-5 { animation-delay: 0.5s; }
+    .animate.delay-6 { animation-delay: 0.6s; }
+
+    /* Scroll-triggered: JS adds .reveal, then .visible on scroll */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
+
+    /* ===== PRINT ===== */
+    @media print {
+      body { background: white !important; color: black !important; }
+      .viz-menu, .reveal { display: revert; opacity: 1 !important; transform: none !important; }
+      .card { break-inside: avoid; border: 1px solid #ddd; box-shadow: none; }
+      * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    }
+    @page { margin: 1in; @bottom-center { content: "Page " counter(page); font-size: 9pt; color: #666; } }
+
+    /* ===== MENU ===== */
+    .viz-menu { position: fixed; top: 16px; right: 16px; z-index: 9999; }
+    .viz-menu-toggle {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+      backdrop-filter: blur(12px); transition: all 0.2s;
+    }
+    .viz-menu-toggle:hover { background: var(--surface-hover); }
+    .viz-menu-dropdown {
+      position: absolute; top: 52px; right: 0; min-width: 200px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 8px;
+      opacity: 0; visibility: hidden; transform: translateY(-8px);
+      transition: all 0.2s; backdrop-filter: blur(16px);
+    }
+    .viz-menu-dropdown.open { opacity: 1; visibility: visible; transform: translateY(0); }
+    .viz-menu-dropdown button {
+      width: 100%; padding: 10px 14px; border: none; border-radius: 8px;
+      background: transparent; color: var(--text); font-size: 14px;
+      font-family: inherit; cursor: pointer; text-align: left;
+      display: flex; align-items: center; gap: 10px; transition: background 0.15s;
+    }
+    .viz-menu-dropdown button:hover { background: var(--surface-hover); }
+
+    /* ===== SKIP TO CONTENT (accessibility) ===== */
+    .skip-to-content {
+      position: absolute; top: -40px; left: 6px; background: var(--accent);
+      color: white; padding: 8px 12px; text-decoration: none;
+      border-radius: 4px; opacity: 0; pointer-events: none;
+      transition: all 0.2s; z-index: 10000;
+    }
+    .skip-to-content:focus { top: 6px; opacity: 1; pointer-events: auto; }
+
+    /* ===== DETAILS ACCORDION (Chrome 120+ exclusive, 131+ animated) ===== */
+    details { overflow: hidden; }
+    details summary { cursor: pointer; list-style: none; }
+    details summary::-webkit-details-marker { display: none; }
+    ::details-content {
+      transition: block-size 0.3s ease, opacity 0.3s ease;
+      block-size: 0; opacity: 0; overflow: hidden;
+    }
+    details[open]::details-content { block-size: auto; opacity: 1; }
+
+    /* ===== POPOVER (Chrome 114+, zero-JS tooltips/panels) ===== */
+    [popover] {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px; max-width: 320px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2); color: var(--text);
+    }
+    [popover]::backdrop { background: rgba(0,0,0,0.3); }
+
+    /* ===== ADD YOUR STYLES BELOW ===== */
+  </style>
+<style>
+body{font-family:Inter,"Noto Sans SC",system-ui,sans-serif} #main-content{max-width:1440px;margin:auto;padding:50px 28px 90px}.hero{display:flex;justify-content:space-between;align-items:end;margin-bottom:30px}.hero h1{font-size:38px;margin:12px 0}.eyebrow{font-size:12px;letter-spacing:.13em;color:var(--accent);font-weight:700}.hero label{color:var(--text-secondary)}.card{margin-bottom:18px}.intro{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}.intro>div{display:flex;flex-direction:column;gap:3px}.intro span,.intro small{color:var(--text-secondary);font-size:13px}.intro strong{font-size:28px}.heading{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:20px}.heading h2{margin:9px 0;font-size:24px}.filters{display:flex;gap:8px;flex-wrap:wrap}input,select,button{background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:9px;font:inherit}button{cursor:pointer}.table-scroll{overflow:auto;border:1px solid var(--border);border-radius:8px}.candidate{max-height:520px}.details{max-height:480px}table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}th{position:sticky;top:0;background:var(--surface);z-index:1;color:var(--text-secondary)}tr.pick{cursor:pointer}tr.pick:hover,tr.active{background:var(--surface-hover)}.trend{display:grid;grid-template-columns:repeat(12,minmax(72px,1fr));gap:5px;overflow:auto}.trend button{display:flex;flex-direction:column;justify-content:end;height:160px;align-items:center;font-size:12px}.bar{background:var(--accent);width:26px;min-height:2px;border-radius:4px 4px 0 0}.trend button.active{outline:2px solid var(--accent)}.pager{display:flex;justify-content:flex-end;gap:14px;align-items:center;margin-top:15px} @media(max-width:760px){#main-content{padding:30px 14px}.hero,.heading{align-items:start;flex-direction:column}.intro{grid-template-columns:1fr 1fr}.hero h1{font-size:30px}}
+</style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:10000;padding:8px 16px;background:var(--accent);color:white;text-decoration:none;border-radius:4px;" onfocus="this.style.cssText='position:fixed;left:16px;top:16px;z-index:10000;padding:8px 16px;background:var(--accent);color:white;text-decoration:none;border-radius:4px;'" onblur="this.style.cssText='position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;'">Skip to content</a>
+  <main id="main-content">
+
+  <!-- MENU -->
+  <div class="viz-menu">
+    <button class="viz-menu-toggle" onclick="toggleMenu()" aria-label="Menu">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/>
+      </svg>
+    </button>
+    <div class="viz-menu-dropdown" id="vizMenuDropdown">
+      <button onclick="cycleTheme()"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button>
+      <button onclick="window.print()"><span>🖨️</span><span>Print / PDF</span></button>
+    </div>
+  </div>
+
+  <!-- SKIP TO CONTENT (accessibility) -->
+  <a href="#main-content" class="skip-to-content">Skip to content</a>
+
+  <div role="main">
+    <header class="hero"><div><span class="eyebrow">采购 / 增长机会</span><h1>采购增量分析</h1><p class="text-secondary">从物料趋势到每一笔采购明细</p></div><label>业务月份 <select id="period"></select></label></header>
+    <section class="intro card"><div><span>当前范围</span><strong id="total">—</strong><small>个候选物料</small></div><div><span>优先谈判</span><strong id="priority">—</strong><small>个物料</small></div><div><span>归档日期</span><strong id="archiveDate">—</strong><small>含税金额 · 上游覆盖待核实</small></div></section>
+    <section class="card"><div class="heading"><div><span class="eyebrow">01 / 物料</span><h2>候选清单</h2><p class="text-secondary">选择物料，查看采购趋势和明细。</p></div><div class="filters"><input id="search" placeholder="搜索物料编码、名称或供应商" aria-label="搜索物料"><select id="level" aria-label="谈判优先级"><option value="">全部优先级</option><option>优先谈判</option><option>观察</option><option>不建议</option></select></div></div><div id="status" role="status" class="text-secondary"></div><div class="table-scroll candidate"><table><thead id="materialHead"></thead><tbody id="materials"></tbody></table></div><div class="pager"><button id="materialPrev">上一页</button><span id="materialPage"></span><button id="materialNext">下一页</button></div></section>
+    <section class="card" id="drill" hidden><div class="heading"><div><span class="eyebrow">02 / 趋势</span><h2 id="selected">物料月度趋势</h2><p class="text-secondary">点击月份，筛选当月明细。</p></div><button id="allMonths" type="button">全部月份</button></div><div id="trend" class="trend" role="group" aria-label="物料月度采购量"></div></section>
+    <section class="card" id="detailSection" hidden><div class="heading"><div><span class="eyebrow">03 / 明细</span><h2>采购入库明细</h2><p id="detailInfo" class="text-secondary"></p></div><div class="filters"><input id="supplier" placeholder="供应商名称（精确）"><input id="company" placeholder="公司名称（精确）"><button id="filterDetails">筛选</button></div></div><div class="table-scroll details"><table><thead id="detailHead"></thead><tbody id="detailBody"></tbody></table></div><div class="pager"><button id="prev">上一页</button><span id="pageLabel"></span><button id="next">下一页</button></div></section>
+  </div>
+
+  <!-- EXAMPLE: Exclusive accordion (only one open at a time, no JS needed) -->
+  <!--
+  <details name="faq" open>
+    <summary>Section 1</summary>
+    <div class="section-body"><p>Content</p></div>
+  </details>
+  <details name="faq">
+    <summary>Section 2</summary>
+    <div class="section-body"><p>Content</p></div>
+  </details>
+  -->
+
+  <!-- EXAMPLE: Popover (zero-JS tooltip/info panel) -->
+  <!--
+  <button popovertarget="info-panel">Details</button>
+  <div id="info-panel" popover>
+    <h3>More Information</h3>
+    <p>Content shown on click, no JS needed.</p>
+  </div>
+  -->
+
+  </main>
+  <script>
+    // === Menu ===
+    function toggleMenu() { 
+      var dropdown = document.getElementById('vizMenuDropdown') || document.getElementById('vizMenu');
+      if (dropdown) dropdown.classList.toggle('open'); 
+    }
+    document.addEventListener('click', e => { 
+      if (!e.target.closest('.viz-menu')) {
+        var dropdown = document.getElementById('vizMenuDropdown') || document.getElementById('vizMenu');
+        if (dropdown) dropdown.classList.remove('open');
+      }
+    });
+    document.addEventListener('keydown', e => { 
+      if (e.key === 'Escape') {
+        var dropdown = document.getElementById('vizMenuDropdown') || document.getElementById('vizMenu');
+        if (dropdown) dropdown.classList.remove('open');
+      }
+    });
+
+    // === Theme (class-based, OS detection on first visit) ===
+    var savedTheme = localStorage.getItem('viz-theme');
+    var currentTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    function applyTheme(t) {
+      document.documentElement.className = 'theme-' + t;
+      document.getElementById('themeIcon').textContent = t === 'dark' ? '🌙' : '☀️';
+      document.getElementById('themeLabel').textContent = t === 'dark' ? 'Dark' : 'Light';
+      localStorage.setItem('viz-theme', t);
+      currentTheme = t;
+      if (typeof onThemeChange === 'function') onThemeChange();
+    }
+    function cycleTheme() { applyTheme(currentTheme === 'dark' ? 'light' : 'dark'); }
+    applyTheme(currentTheme);
+
+    // === Scroll Reveal (adds .reveal then .visible — content visible without JS) ===
+    document.querySelectorAll('[data-reveal]').forEach(el => el.classList.add('reveal'));
+    var revealObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) { if (e.isIntersecting) { e.target.classList.add('visible'); revealObserver.unobserve(e.target); } });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+    // === Number Counter (use data-count="77" data-suffix="%" on elements) ===
+    function animateCounters() {
+      document.querySelectorAll('[data-count]').forEach(function(el) {
+        if (el.dataset.counted) return;
+        el.dataset.counted = '1';
+        var target = parseFloat(el.dataset.count), prefix = el.dataset.prefix || '', suffix = el.dataset.suffix || '';
+        var start = performance.now(), duration = 1200;
+        (function tick(now) {
+          var p = Math.min((now - start) / duration, 1), eased = 1 - Math.pow(1 - p, 3);
+          el.textContent = prefix + Math.round(target * eased).toLocaleString() + suffix;
+          if (p < 1) requestAnimationFrame(tick);
+        })(start);
+      });
+    }
+    var counterEl = document.querySelector('[data-count]');
+    if (counterEl) {
+      var cObs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) { if (e.isIntersecting) { animateCounters(); cObs.disconnect(); } });
+      }, { threshold: 0.3 });
+      cObs.observe(counterEl);
+    }
+
+    // === Download PNG ===
+    async function downloadImage() {
+      var menu = document.querySelector('.viz-menu');
+      menu.style.display = 'none';
+      try {
+        var url = await htmlToImage.toPng(document.body, { quality: 1, pixelRatio: 2, filter: function(n) { return !n.classList || !n.classList.contains('viz-menu'); } });
+        var a = document.createElement('a'); a.href = url;
+        a.download = document.title.replace(/\s+/g, '-').toLowerCase() + '.png'; a.click();
+      } catch(e) { console.error('Download failed:', e); }
+      menu.style.display = '';
+    }
+
+    // === Chart.js Pattern (use when file has Chart.js) ===
+    // var chartsBuilt = false;
+    // function buildCharts() {
+    //   if (chartsBuilt || typeof Chart === 'undefined') return;
+    //   var isDark = document.documentElement.classList.contains('theme-dark');
+    //   var textColor = isDark ? '#EDEDED' : '#0f172a';
+    //   var borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+    //   // Create charts with theme-aware colors
+    //   chartsBuilt = true;
+    // }
+    // function onThemeChange() { chartsBuilt = false; buildCharts(); }
+    // window.addEventListener('load', buildCharts);
+
+    var state = {month:'', material:'', purchaseMonth:'', rows:[], columns:[], materialPage:1, page:1, total:0};
+    var el = function(id){return document.getElementById(id)};
+    var value = function(v){ if(v === null || v === undefined) return '—'; if(Array.isArray(v)) return v.map(value).join('、'); if(typeof v === 'number') return String(v); return String(v) };
+    var api = async function(path, params){var q=new URLSearchParams(params||{});var res=await fetch(path+'?'+q);var data=await res.json();if(!res.ok) throw Error(data.error||'读取失败');return data};
+    var td = function(tr, v){var c=document.createElement('td');c.textContent=value(v);tr.appendChild(c)};
+    function showError(err){el('status').textContent=err.message||String(err)}
+    function renderMaterials(){var body=el('materials');body.replaceChildren();var q=el('search').value.trim().toLowerCase(),level=el('level').value;var rows=state.rows.filter(function(r){return (!level||r['谈判优先级']===level) && [r['物料编码'],r['物料名称'],r['核心供应商名称']].some(function(x){return value(x).toLowerCase().includes(q)})});var pageSize=50,maxPage=Math.max(1,Math.ceil(rows.length/pageSize));state.materialPage=Math.min(state.materialPage,maxPage);el('status').textContent='共 '+rows.length+' 个物料；可左右滚动查看全部字段';el('materialPage').textContent='第 '+state.materialPage+' / '+maxPage+' 页';el('materialPrev').disabled=state.materialPage<=1;el('materialNext').disabled=state.materialPage>=maxPage;var head=el('materialHead');head.replaceChildren();var header=document.createElement('tr');state.columns.forEach(function(name){var th=document.createElement('th');th.textContent=name;header.appendChild(th)});head.appendChild(header);rows.slice((state.materialPage-1)*pageSize,state.materialPage*pageSize).forEach(function(r){var tr=document.createElement('tr');tr.className='pick'+(String(r['物料编码'])===state.material?' active':'');state.columns.forEach(function(name){var v=r[name];if(name==='采购量趋势指数'&&v!=null)v=(v*100).toFixed(1)+'%';if(name==='最近12个月含税金额万'&&v!=null)v=Number(v).toLocaleString('zh-CN',{maximumFractionDigits:2});td(tr,v)});tr.addEventListener('click',function(){selectMaterial(r).catch(showError)});body.appendChild(tr)})}
+    async function loadReport(){state.month=el('period').value;state.material='';el('drill').hidden=true;el('detailSection').hidden=true;var res=await api('/api/report',{month:state.month});state.rows=res.data.rows;var first=['物料编码','物料名称','谈判优先级','核心供应商名称','最近12个月含税金额万','采购量趋势指数'];state.columns=first.concat(res.data.columns.filter(function(c){return !first.includes(c)}));state.materialPage=1;el('total').textContent=state.rows.length.toLocaleString();el('priority').textContent=state.rows.filter(function(r){return r['谈判优先级']==='优先谈判'}).length.toLocaleString();el('archiveDate').textContent=res.meta['归档日期'];renderMaterials()}
+    async function selectMaterial(r){state.material=String(r['物料编码']);state.purchaseMonth='';state.page=1;el('supplier').value='';el('company').value='';el('drill').hidden=false;el('detailSection').hidden=false;el('selected').textContent=value(r['物料名称'])+' · '+state.material;renderMaterials();var res=await api('/api/monthly',{month:state.month,material:state.material});var trend=el('trend');trend.replaceChildren();var max=Math.max(1,...res.rows.map(function(x){return Math.abs(x['月采购量'])}));res.rows.forEach(function(row){var b=document.createElement('button'),bar=document.createElement('span'),number=document.createElement('span'),date=document.createElement('span');b.type='button';b.setAttribute('aria-label',row['采购月']+' 采购净量 '+value(row['月采购量']));bar.className='bar';bar.style.height=Math.max(2,Math.abs(row['月采购量'])/max*80)+'px';if(row['月采购量']<0)bar.style.background='var(--negative)';number.textContent=value(row['月采购量']);date.textContent=row['采购月'];b.append(number,bar,date);b.addEventListener('click',function(){state.purchaseMonth=row['采购月'];state.page=1;trend.querySelectorAll('button').forEach(function(x){x.classList.remove('active')});b.classList.add('active');loadDetails().catch(showError)});trend.appendChild(b)});await loadDetails()}
+    async function loadDetails(){var res=await api('/api/details',{month:state.month,material:state.material,purchase_month:state.purchaseMonth,supplier:el('supplier').value,company:el('company').value,page:state.page});state.total=res.total;el('detailInfo').textContent=(state.purchaseMonth||'全部月份')+' · '+res.total.toLocaleString()+' 条记录';var head=el('detailHead');head.replaceChildren();var tr=document.createElement('tr');res.data.columns.forEach(function(name){var th=document.createElement('th');th.textContent=name;tr.appendChild(th)});head.appendChild(tr);var body=el('detailBody');body.replaceChildren();res.data.rows.forEach(function(row){var line=document.createElement('tr');res.data.columns.forEach(function(name){td(line,row[name])});body.appendChild(line)});el('pageLabel').textContent='第 '+state.page+' 页';el('prev').disabled=state.page<=1;el('next').disabled=state.page*res.page_size>=state.total}
+    el('search').addEventListener('input',function(){state.materialPage=1;renderMaterials()});el('level').addEventListener('change',function(){state.materialPage=1;renderMaterials()});el('materialPrev').addEventListener('click',function(){state.materialPage--;renderMaterials()});el('materialNext').addEventListener('click',function(){state.materialPage++;renderMaterials()});el('period').addEventListener('change',function(){loadReport().catch(showError)});el('filterDetails').addEventListener('click',function(){state.page=1;loadDetails().catch(showError)});el('prev').addEventListener('click',function(){state.page--;loadDetails().catch(showError)});el('next').addEventListener('click',function(){state.page++;loadDetails().catch(showError)});el('allMonths').addEventListener('click',function(){state.purchaseMonth='';state.page=1;el('trend').querySelectorAll('button').forEach(function(x){x.classList.remove('active')});loadDetails().catch(showError)});
+    (async function(){try{var periods=await api('/api/periods');periods.forEach(function(x){var opt=document.createElement('option');opt.value=opt.textContent=x;el('period').appendChild(opt)});if(periods.length) await loadReport();else el('status').textContent='暂无已归档结果'}catch(err){showError(err)}})();
+
+  </script>
+</body>
+</html>

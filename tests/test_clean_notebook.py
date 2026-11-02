@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pandas as pd
 
-import archive
+import storage
 from clean.procurement_inbound import STANDARD_COLUMNS
 from helpers import inbound_row, make_temp_dir
 from paths import PROJECT_ROOT
@@ -22,9 +22,9 @@ class CleanNotebookTests(unittest.TestCase):
                 raw[source] = "样例"
         raw["购退单价"] = None
         processed = raw.drop(columns=["批次号", "单据编码"])
-        with patch.object(archive, "DATA_ROOT", root):
+        with patch.object(storage, "DATABASE", root / "test.duckdb"):
             for layer, frame in (("raw", raw), ("processed", processed)):
-                archive.write_snapshot(frame, layer, "procurement-inbound", "2026-09-30", check_fetched_at=False)
+                storage.replace_partition(layer, "procurement_inbound", "2026-09-30", frame)
             path = PROJECT_ROOT / "notebooks/采购增量分析/数据清洗确认.ipynb"
             notebook = json.loads(path.read_text())
             scope = {"display": lambda value: None}
