@@ -2,13 +2,17 @@
 
 只懂「文件怎么摆、怎么写不坏」，不懂采购业务，也不懂某个来源的字段口径：
 
-    data/<层>/<来源>/<YYYY>/<YYYY-MM>/<YYYY-MM-DD>/data.parquet
+    data/<层>/<名称>/<YYYY>/<YYYY-MM>/<YYYY-MM-DD>/data.parquet
 
-- 层只有 ``raw``（来源原样）和 ``processed``（业务侧清洗底表）
+- 层有三种：``raw``（来源原样）、``processed``（业务侧清洗底表）、
+  ``outputs``（指标结果，一行一业务粒度，供看板取数）
+- raw / processed 的 ``<名称>`` 是来源 id（小写连字符）；outputs 的是**场景名**，
+  与 ``notebooks/<场景>/`` 同名，允许中文
 - 写入原子替换当天文件，写失败不留半个文件
 - 读只按路径读，不做列改名校验
 
-来源口径在 ``src/sources/``，对外取数在 ``src/read_data.py``。
+来源口径在 ``src/sources/``，对外取数在 ``src/read_data.py``，
+指标结果归档在 ``src/reporting/metrics.py``。
 """
 from __future__ import annotations
 
@@ -23,7 +27,9 @@ import pyarrow.parquet as pq
 
 from paths import DATA_ROOT, TIMEZONE
 
-LAYERS = ("raw", "processed")
+LAYERS = ("raw", "processed", "outputs")
+#: 场景名允许中文，只挡路径分隔符、隐藏文件与空名
+SCENE_LAYER = "outputs"
 META_SOURCE = "_source"
 META_FETCHED_AT = "_fetched_at"
 
@@ -51,12 +57,22 @@ def archive_date(fetched_at: str) -> str:
     return stamp.astimezone(TIMEZONE).date().isoformat()
 
 
+def _validate_name(layer: str, name: str) -> None:
+    """raw / processed 只收来源 id；outputs 收场景名（与 notebooks/ 同名，可中文）。"""
+    if layer == SCENE_LAYER:
+        if (not name or name.startswith(".") or "/" in name or "\\" in name
+                or any(ch in name for ch in "\x00\n\r")):
+            raise DataStoreError(f"场景名不能为空、不能以 . 开头、不能含路径分隔符：{name!r}")
+        return
+    if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name):
+        raise DataStoreError(f"数据来源名称必须由小写字母、数字和连字符组成：{name}")
+
+
 def snapshot_path(layer: str, source: str, snapshot_date: str) -> Path:
     """例如 raw/procurement-inbound/2026/2026-10/2026-10-25/data.parquet。"""
     if layer not in LAYERS:
         raise DataStoreError(f"未知数据层：{layer}，可选 {', '.join(LAYERS)}")
-    if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", source):
-        raise DataStoreError(f"数据来源名称必须由小写字母、数字和连字符组成：{source}")
+    _validate_name(layer, source)
     day = validate_date(snapshot_date)
     return DATA_ROOT / layer / source / day[:4] / day[:7] / day / "data.parquet"
 

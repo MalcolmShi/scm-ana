@@ -24,7 +24,7 @@
 
 `notebooks/数据清洗/` 是数据源级共享工作区（不属于任何场景）：接入方案与清洗研究放这里，产出被所有场景复用。
 
-新增分析场景：按 [分析方案模板](.agents/skills/data-ana/templates/分析方案.md) 建文档，从第一步（业务理解与指标构建）开始；五步方法见 [data-ana SKILL.md](.agents/skills/data-ana/SKILL.md)。
+新增分析场景：按 [分析方案模板](.agents/skills/data-ana/templates/分析方案.md) 建文档，从第一步（业务理解与指标构建）开始；第 0~5 步方法见 [data-ana SKILL.md](.agents/skills/data-ana/SKILL.md)。
 
 ## 目录组织
 
@@ -38,25 +38,31 @@ scm-ana/
 │   ├── 采购增量分析/               #   方案 md + 验证 notebook
 │   ├── 采购降本统计/               #   核算方案 md + 数据模型 md
 │   └── 数据清洗/                  #   数据源级共享：接入方案 + 清洗研究 notebook
-├── .agents/skills/data-ana/       # data-ana 技能（ZCode 自动发现；五步法）
-│   ├── SKILL.md                   #   进入方式 + 三条铁律 + 五步路由
-│   ├── references/                #   各步方法：01~04 已定，05 随场景推进补齐
+├── .agents/skills/data-ana/       # data-ana 技能（ZCode 自动发现；第 0~5 步）
+│   ├── SKILL.md                   #   进入方式 + 三条铁律 + 三层数据 + 步骤路由
+│   ├── references/                #   各步方法：00~04（第五步看板说明在 SKILL.md 内）
 │   └── templates/                 #   分析方案 / 数据清洗模版 / 指标验证模版
+├── .agents/skills/visualize/      # visualize 技能（上游 MIT，内置；出单文件静态 HTML 看板）
 ├── src/                           # 代码分层：与场景解耦的引擎
 │   ├── paths.py                   # 项目路径与上海时区
-│   ├── archive.py                 # 存储层：parquet 归档的路径规则与读写
+│   ├── archive.py                 # 存储层：parquet 归档的路径规则与读写（raw/processed/outputs 三层）
 │   ├── read_data.py               # 取数门面：read_inbound(start, end, columns)
 │   ├── pipeline.py                # 流水线：analyze()，取数 → 分析 → 导出
 │   ├── sources/procurement_inbound.py  # 数据源层：口径 + 取数 + Excel 导入（一来源一模块）
 │   ├── analysis/procurement_increment.py  # 分析层：一场景一模块（Config + run_analysis + export）
-│   └── reporting/excel.py         # 导出层：Excel 报告
+│   ├── reporting/excel.py         # 导出层：Excel 报告
+│   └── reporting/metrics.py       # 导出层：指标结果归档 metrics + json（data/outputs 落两份）
 ├── scripts/
 │   ├── sync_data.py               # 导入入口：Excel 导出 → raw 日档
 │   └── run_analysis.py            # 分析入口：跑增量分析、导报告
-├── tests/                         # 离线测试：test_archive / test_inbound / test_increment
+├── tests/                         # 离线测试：test_archive / test_metrics / test_inbound / test_increment
 ├── data/
 │   ├── raw/                       # 来源文件原样归档，按来源和业务日存放
-│   └── processed/                 # 清洗底表（清洗规则确认后由 src/clean 落地写入）
+│   ├── processed/                 # 清洗底表（清洗规则确认后由第三步脚本写入）
+│   └── outputs/                   # 指标结果归档：每张表 data.parquet + data.json（看板取数）
+├── outputs/                       # 交付物（不进 data/）
+│   ├── reports/<业务结束日>/       #   报表、Excel 报告
+│   └── dashboard/<场景>/           #   单文件静态看板 <业务结束日>.html，双击打开，不部署
 └── assets/                        # 文档图示
 ```
 
@@ -67,9 +73,14 @@ scm-ana/
 ```text
 data/raw/procurement-inbound/2026/2026-10/2026-10-25/data.parquet
 data/processed/procurement-inbound/2026/2026-10/2026-10-25/data.parquet
+data/outputs/采购增量分析/2026/2026-09/2026-09-30/data.parquet
+data/outputs/采购增量分析/2026/2026-09/2026-09-30/data.json
 ```
 
-路径统一为 `data/<层>/<来源>/<YYYY>/<YYYY-MM>/<YYYY-MM-DD>/data.parquet`，一天一个业务日期。
+路径统一为 `data/<层>/<名称>/<YYYY>/<YYYY-MM>/<YYYY-MM-DD>/data.parquet`，一天一个业务日期。
+来源 id（raw / processed）用小写连字符；outputs 层的 `<名称>` 是**场景名**，与 `notebooks/<场景>/` 同名。
+outputs 层每张表落两份：`data.parquet` 给复算与对拍，`data.json` 给看板取数（`meta` + `tables`），由
+`reporting.metrics.archive_metrics()` 一次运行同时产出。
 raw 是来源文件的原样转换：列名、取值和单位都不动，只追加 `_source` 和 `_fetched_at` 两列元数据。
 清洗由业务侧单独处理，底表写入 `data/processed/`；分析优先读底表，没有底表时直接读 raw。
 
@@ -129,6 +140,7 @@ uv run python -m unittest discover -s tests -t tests
 | 采购增量分析：口径与报表字段 / 研究验证 | [方案](notebooks/采购增量分析/采购增量分析.md) · [验证 notebook](notebooks/采购增量分析/采购增量分析.ipynb) |
 | 采购降本统计：核算方案 / 数据模型 | [核算方案](notebooks/采购降本统计/采购降本自动化核算方案.md) · [数据模型](notebooks/采购降本统计/采购降本核算数据模型.md) |
 | 数据接入与清洗方案（数据源级，含新增来源指引） | [采购入库接入及清洗](notebooks/数据清洗/采购入库接入及清洗.md) · [清洗研究](notebooks/数据清洗/采购入库数据清洗.ipynb) |
-| 数据分析技能方法论（五步法 + 三条铁律） | [data-ana SKILL.md](.agents/skills/data-ana/SKILL.md) |
+| 数据分析技能方法论（第 0~5 步 + 三条铁律 + 三层数据） | [data-ana SKILL.md](.agents/skills/data-ana/SKILL.md) |
+| 看板技术侧（版式、图表、主题、导出） | [visualize 技能](.agents/skills/visualize/SKILL.md) |
 | 技能设计思路调研 | [数据分析技能设计思路调研](数据分析技能设计思路调研.md) |
 | 分派反馈规划 | [分派与反馈](分派与反馈.md) |
