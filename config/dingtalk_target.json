@@ -1,0 +1,11 @@
+{
+  "_comment": "钉钉派发的固定目标（2026-11-02 建立，业务结束月为首列主字段）。以后每月派发都写入这张表，不再新建 Base；重跑同一周期按「业务结束月+物料编码」upsert。",
+  "baseId": "14lgGw3P8vvePdElTn1v0p3A85daZ90D",
+  "baseName": "降本识别",
+  "tableId": "qzEedcw",
+  "tableName": "采购增量识别",
+  "viewId": "N0XUl5q",
+  "url": "https://alidocs.dingtalk.com/i/nodes/14lgGw3P8vvePdElTn1v0p3A85daZ90D?iframeQuery=entrance%3Ddata%26sheetId%3DqzEedcw",
+  "primaryField": "业务结束月",
+  "upsertKey": ["业务结束月", "物料编码"]
+}

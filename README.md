@@ -52,6 +52,10 @@ uv run python scripts/run_dashboard.py --port 18765
 
 # 离线测试
 uv run python -m unittest discover -s tests -t tests
+
+# 导出钉钉派发任务：默认最新归档周期的优先谈判物料
+uv run python scripts/export_dispatch_tasks.py
+uv run python scripts/export_dispatch_tasks.py 2026-09 --priority all
 ```
 
 一个日期参数表示整年、整月或当天；两个参数表示闭区间。已建立的数据集在指定窗口无记录时返回保留字段的空 DataFrame；数据库或数据集未建立、processed 已知缺档或过期时明确报错：
@@ -73,3 +77,4 @@ monthly = read_outputs('procurement_increment', '2026-09-30', 'monthly')
 - [采购增量指标验证](notebooks/采购增量分析/采购增量分析.ipynb)
 - [采购入库清洗确认](notebooks/数据清洗/采购入库清洗确认.ipynb)
 - [数据分析 skill](.agents/skills/data-ana/SKILL.md)
+- [钉钉派发 skill](.agents/skills/dingtalk-dispatch/SKILL.md)：outputs 导出派发任务，写入钉钉多维表「采购增量识别」；固定表见 `config/dingtalk_target.json`，负责人规则见 `src/dispatch_rules.py`（按五级分类）
