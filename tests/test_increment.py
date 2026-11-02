@@ -26,7 +26,21 @@ class IncrementTests(unittest.TestCase):
         self.assertEqual(tables['detail']['物料编码'].tolist(),['growth'])
         self.assertEqual(tables['detail']['谈判优先级'].tolist(),['优先谈判'])
         self.assertEqual(tables['detail']['最近12个月采购净量'].tolist(),[180])
-        for name in ['采购月','出入库日期','数量','采购金额(万)','主单位多值']:
+        for name in ['采购月','出入库日期','数量','采购金额(万)','主单位多值','备货嫌疑','免费数量占比']:
             self.assertNotIn(name,tables['detail'].columns)
         self.assertEqual(set(tables['monthly']['物料编码']),{'growth','zero','negative'})
         self.assertEqual(meta['excluded_materials'],2)
+
+    def test_confirmed_historical_missing_amount_is_excluded(self):
+        months = pd.period_range('2025-02', '2026-01', freq='M')
+        rows = [{'物料编码':'M', '物料名称':'试剂', '规格':'规格', '主单位':'盒',
+                 '供应商名称':'供应商', '供应商类型':'外部单位', '板块':'检验',
+                 '出入库日期':m.start_time + pd.Timedelta(days=10), '数量':10, '采购金额(万)':1.}
+                for m in months]
+        rows.append({**rows[0], '供应商名称':None, '采购金额(万)':None, '数量':100})
+        tables, meta = analyze(pd.DataFrame(rows), '2026-01')
+        self.assertEqual(meta['excluded_historical_rows'], 1)
+        self.assertEqual(tables['detail'].iloc[0]['最近12个月采购净量'], 120)
+        rows[-1]['出入库日期'] = pd.Timestamp('2025-08-11')
+        with self.assertRaisesRegex(ValueError, '必需字段存在空值'):
+            analyze(pd.DataFrame(rows), '2026-01')

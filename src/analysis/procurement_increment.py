@@ -13,6 +13,10 @@ def _filter_details(frame: pd.DataFrame, end_month: str):
     missing = [c for c in REQUIRED if c not in frame]
     if missing:
         raise ValueError(f"processed 缺少字段：{missing}")
+    dates = pd.to_datetime(frame["出入库日期"], errors="raise")
+    historical_missing = dates.between("2025-02-07", "2025-07-01") & frame["采购金额(万)"].isna()
+    excluded_rows = int(historical_missing.sum())
+    frame = frame.loc[~historical_missing]
     essential = ["出入库日期", "物料编码", "供应商名称", "供应商类型", "板块", "数量", "采购金额(万)"]
     if frame[essential].isna().any().any():
         raise ValueError("processed 分析必需字段存在空值")
@@ -30,7 +34,7 @@ def _filter_details(frame: pd.DataFrame, end_month: str):
     if df.empty:
         raise ValueError("没有符合范围和金额门槛的物料")
 
-    return df, end, months
+    return df, end, months, excluded_rows
 
 
 def _monthly_totals(df: pd.DataFrame, months: pd.PeriodIndex):
@@ -61,8 +65,6 @@ def _growth_metrics(qty: pd.DataFrame):
     metrics["半年同比"] = qty.iloc[:, 6:].mean(axis=1) / first_half.where(first_half > 0) - 1
     quarters = pd.DataFrame({i: qty.iloc[:, i * 3:i * 3 + 3].mean(axis=1) for i in range(4)})
     metrics["逐季抬升次数"] = quarters.diff(axis=1).iloc[:, 1:].gt(0).sum(axis=1)
-    last3 = qty.iloc[:, -3:]
-    metrics["备货嫌疑"] = (last3.max(axis=1) / last3.sum(axis=1).where(last3.sum(axis=1) > 0)).ge(0.7) & metrics["半年同比"].lt(0)
 
     return metrics
 
@@ -93,9 +95,7 @@ def _build_report(df, qty, metrics, suppliers, end):
     step = (report["采购量趋势指数"] >= .20) & ((report["最近1个月环比增长率"] >= .10) | (report["连续增长月数"] >= 2))
     climb = (report["逐季抬升次数"] >= 2) & (report["半年同比"] >= .50)
     report["谈判优先级"] = np.select([baseline & (step | climb), baseline & (report["采购量趋势指数"] >= .10)], ["优先谈判", "观察"], default="不建议")
-    free = df.loc[df["采购金额(万)"].eq(0)].groupby("物料编码")["数量"].sum()
     total_qty = df.groupby("物料编码")["数量"].sum()
-    report["免费数量占比"] = report["物料编码"].map(free.reindex(total_qty.index, fill_value=0) / total_qty.where(total_qty != 0))
     multi_unit = report["物料编码"].map(df.groupby("物料编码")["主单位"].nunique().gt(1))
     report["最近12个月采购净量"] = report["物料编码"].map(total_qty).mask(multi_unit)
     report["业务结束月"] = str(end)
@@ -103,14 +103,14 @@ def _build_report(df, qty, metrics, suppliers, end):
     report = (report.assign(_顺序=report["谈判优先级"].map(order))
               .sort_values(["_顺序", "采购量趋势指数", "最近12个月含税金额万"], ascending=[True, False, False], na_position="last")
               .drop(columns="_顺序").reset_index(drop=True))
-    columns = ["业务结束月", "物料编码", "物料名称", "规格", "主单位", "谈判优先级", "核心供应商名称", "最近12个月采购净量", "最近12个月含税金额万", "采购量趋势指数", "最近1个月环比增长率", "连续增长月数", "单一供应商供货占比", "最近3个月平均采购量", "前3个月平均采购量", "半年同比", "逐季抬升次数", "最近3个月采购量占比", "备货嫌疑", "免费数量占比", "核心供应商含税金额万"]
+    columns = ["业务结束月", "物料编码", "物料名称", "规格", "主单位", "谈判优先级", "核心供应商名称", "最近12个月采购净量", "最近12个月含税金额万", "采购量趋势指数", "最近1个月环比增长率", "连续增长月数", "单一供应商供货占比", "最近3个月平均采购量", "前3个月平均采购量", "半年同比", "逐季抬升次数", "最近3个月采购量占比", "核心供应商含税金额万"]
     return report[columns], int(rejected.sum())
 
 
 
 def analyze(frame: pd.DataFrame, end_month: str) -> tuple[dict[str, pd.DataFrame], dict]:
     """从 processed 明细计算物料报表和月度表，不读取或写入数据。"""
-    df, end, months = _filter_details(frame, end_month)
+    df, end, months, excluded_rows = _filter_details(frame, end_month)
     monthly, qty = _monthly_totals(df, months)
     metrics = _growth_metrics(qty)
     suppliers = _supplier_metrics(df)
@@ -118,5 +118,5 @@ def analyze(frame: pd.DataFrame, end_month: str) -> tuple[dict[str, pd.DataFrame
     monthly["采购月"] = monthly["采购月"].astype(str)
     return {"detail": report, "monthly": monthly}, {
         "input_rows": len(frame), "filtered_rows": len(df), "filtered_materials": len(qty),
-        "excluded_materials": excluded,
+        "excluded_materials": excluded, "excluded_historical_rows": excluded_rows,
     }

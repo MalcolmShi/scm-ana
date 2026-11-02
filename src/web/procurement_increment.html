@@ -180,9 +180,52 @@ html.theme-dark{--bg:#101b17;--surface:#192823;--surface-hover:#23382e;--border:
 .archive-inline{display:none}
 .monthly-scroll{overflow-x:auto;margin-top:12px;border:1px solid var(--border);border-radius:7px}.monthly-scroll table{min-width:900px;table-layout:fixed}.monthly-scroll th,.monthly-scroll td{position:static;padding:10px;text-align:right;white-space:nowrap}.monthly-scroll th:first-child,.monthly-scroll td:first-child{position:sticky;left:0;z-index:1;text-align:left;width:118px;background:var(--surface-hover)}.monthly-scroll thead th{background:var(--surface-hover)}.monthly-scroll button{width:100%;border:1px solid transparent;border-radius:4px;padding:4px;background:transparent;font-size:12px;color:var(--text-secondary)}.monthly-scroll button:hover,.monthly-scroll button.active{background:var(--surface);border-color:var(--accent);color:var(--accent)}
 .filters-panel{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:0 0 18px;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:8px}.filter-field{display:flex;flex-direction:column;gap:7px;min-width:0}.filter-field>span{font-size:12px;font-weight:600;color:var(--text-secondary)}.filter-field input,.filter-field select{width:100%;height:38px;padding:0 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-size:13px;min-width:0}.filters-actions{display:flex;align-items:end}.filters-actions button{height:38px;padding:0 14px;border:1px solid var(--border);border-radius:6px;background:var(--surface);font-size:13px}.filters-actions button:hover{border-color:var(--accent)}
+.indicator-guide{margin:0 0 18px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}.indicator-guide summary{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--text);font-size:14px;font-weight:600}.indicator-guide summary::after{content:'展开 +';font-size:12px;font-weight:400;color:var(--accent)}.indicator-guide[open] summary::after{content:'收起 −'}.indicator-guide summary:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}.guide-content{padding:2px 16px 16px}.guide-intro{font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0 0 12px}.guide-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:0 22px}.guide-list div{border-top:1px solid var(--border);padding:12px 0}.guide-list dt{font-size:13px;font-weight:600;color:var(--text)}.guide-list dd{font-size:13px;line-height:1.65;color:var(--text-secondary);margin:5px 0 0}.guide-list dd strong{color:var(--text);font-weight:600}.filter-help{font-size:11px;color:var(--text-secondary);line-height:1.4}
 @media(max-width:600px){.brand{min-width:0}.brandmark{flex:none}.brand>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.header-right{font-size:0;gap:0;flex:none}.header-right select{font-size:12px}.hero{padding:32px 0 25px;align-items:start;gap:12px}.hero h1{font-size:2.5rem}.hero-note{display:none}.archive-inline{display:inline}.overview{grid-template-columns:1fr}.summary-lead{min-height:125px;padding:19px 20px}.summary-total strong{font-size:2.4rem}.summary-distribution{border-left:1px solid var(--border);border-top:0;border-radius:0 0 12px 12px;padding:18px 20px}.distribution-bar{margin-top:14px}.distribution-legend{justify-content:space-between;gap:8px}.distribution-legend div{gap:5px}.workspace{margin-top:48px}}
 
-  </style>
+  
+.view-tabs{display:flex;gap:28px;border-bottom:1px solid var(--border);margin-bottom:26px}
+.view-tabs button{position:relative;padding:12px 2px 14px;border:0;background:transparent;color:var(--text-secondary);font-size:14px;font-weight:600;cursor:pointer}
+.view-tabs button[aria-selected="true"]{color:var(--accent)}
+.view-tabs button[aria-selected="true"]::after{content:"";position:absolute;bottom:-1px;left:0;right:0;height:3px;background:var(--accent);border-radius:3px}
+.view-tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.indicator-page-heading{margin:34px 0 20px}.indicator-page-heading h2{font-size:2rem;margin:0 0 8px}.indicator-page-heading p{color:var(--text-secondary);font-size:14px}
+.indicator-page .guide-content{padding:20px 24px}.indicator-page .guide-intro{margin-bottom:16px}.indicator-page .guide-list{display:block}.indicator-page .guide-list div{display:grid;grid-template-columns:minmax(160px,220px) 1fr;gap:20px;padding:15px 0}.indicator-page .guide-list dd{margin:0}
+@media(max-width:600px){.indicator-page .guide-content{padding:16px}.indicator-page .guide-list div{grid-template-columns:1fr;gap:5px}}
+.filter-range{display:flex;align-items:center;gap:7px}.filter-range input{width:0;flex:1}.filter-range span{color:var(--text-secondary);font-size:12px}
+
+/* 筛选：按指标分组，避免将所有输入挤在一行。 */
+.filters-panel{display:block;margin:0 0 18px;padding:0;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.filters-header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 22px;border-bottom:1px solid var(--border)}
+.filters-heading,.filters-header-actions{display:flex;align-items:center;gap:12px}.filters-heading>div{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.filters-heading strong{font-size:14px;color:var(--text)}.filters-heading>div>span{font-size:12px;color:var(--text-secondary)}
+.filters-icon{width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--border);border-radius:8px;color:var(--accent);background:var(--surface-hover);flex:none}.filters-icon svg{width:17px;height:17px}
+.filter-count{font-size:12px;color:var(--text-secondary);white-space:nowrap}.filters-header-actions button{border:0;background:transparent;color:var(--accent);font-size:12px;font-weight:600;white-space:nowrap;padding:8px;border-radius:6px;cursor:pointer}.filters-header-actions button:hover{background:var(--surface-hover)}
+.filters-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px 24px;padding:20px 22px 22px}.filter-field{min-width:0;gap:9px}.filter-field>span{font-size:13px;font-weight:600;line-height:1.4;color:var(--text)}
+.filter-range{display:flex;align-items:center;gap:0;border:1px solid var(--border);border-radius:7px;background:var(--bg);overflow:hidden;transition:border-color .15s,box-shadow .15s}.filter-range:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 15%,transparent)}
+.filter-field .filter-range input{height:42px;min-width:0;width:0;flex:1;border:0;border-radius:0;background:transparent;padding:0 12px;font-size:14px;outline:none;color:var(--text);box-shadow:none}.filter-range input::placeholder{color:var(--text-secondary);opacity:.75}.filter-range>span{font-size:12px;color:var(--text-secondary);padding:0 2px;flex:none}
+@media(max-width:1000px){.filters-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.filters-header{align-items:flex-start;padding:16px}.filters-heading>div{display:block}.filters-heading>div>span{display:block;margin-top:3px}.filters-header-actions{gap:2px}.filters-grid{padding:18px 16px;gap:18px 14px}.filter-field>span{font-size:12px}.filter-field .filter-range input{padding:0 8px;font-size:13px}}
+@media(max-width:420px){.filters-grid{grid-template-columns:1fr}.filters-header-actions{flex-direction:column;align-items:flex-end}.filters-header-actions button{padding:4px 0}}
+
+
+/* 谈判候选区域：筛选与结果分层，突出结果并方便阅读宽表。 */
+.workspace .section-top{margin-bottom:24px}.workspace .section-top h2{letter-spacing:-.035em}.workspace .section-side{display:none}
+.workspace .toolbar{gap:10px;margin-bottom:14px}.workspace .search-wrap{max-width:380px;min-height:44px}.workspace .select-wrap{min-height:44px}
+.filters-panel{box-shadow:0 4px 16px rgba(24,55,39,.025)}
+.filters-header{padding:15px 20px}.filters-heading strong{font-size:14px}.filters-grid{padding:18px 20px 20px;gap:19px 22px}
+.filter-field .filter-range input{background:var(--surface)}.filter-range>span{align-self:stretch;display:flex;align-items:center;padding:0 8px;background:var(--surface);color:var(--text-secondary)}
+.candidate-heading{display:flex;justify-content:space-between;align-items:end;gap:16px;margin:28px 0 12px}.candidate-heading>div{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}.candidate-heading h3{font-size:17px;letter-spacing:-.02em;font-weight:650;margin:0;color:var(--text)}.candidate-heading #status,.candidate-hint{font-size:12px;color:var(--text-secondary)}.candidate-hint span{color:var(--accent);margin-left:5px}
+.candidate{border-radius:10px;max-height:540px;box-shadow:0 4px 18px rgba(24,55,39,.025)}.candidate th{font-size:12px;font-weight:600;color:var(--text-secondary);height:48px;border-bottom:1px solid var(--border)}.candidate td{height:56px;font-size:13px;color:var(--text);font-variant-numeric:tabular-nums}.candidate tr.pick td:first-child{font-weight:650;color:var(--accent)}.candidate tr.pick:hover td,.candidate tr.active td{background:var(--surface-hover)}.candidate tr:focus-visible{outline-offset:-2px}.candidate .tag{padding:5px 10px;font-size:12px}
+@media(max-width:600px){.candidate-heading{align-items:flex-start;flex-direction:column;gap:5px}.candidate-hint{font-size:11px}.filters-header{padding:14px 16px}.filters-grid{padding:18px 16px}}
+
+
+.filters-panel>summary{list-style:none;cursor:pointer;user-select:none;border-bottom:0}.filters-panel>summary::-webkit-details-marker{display:none}.filters-panel>summary:hover{background:var(--surface-hover)}.filters-panel>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}.filters-panel[open]>summary{border-bottom:1px solid var(--border)}
+.filters-toggle{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--accent);white-space:nowrap}.filters-chevron{display:inline-block;font-size:18px;line-height:1;transition:transform .15s}.filters-panel[open] .filters-chevron{transform:rotate(180deg)}.filters-panel[open] .filters-toggle{font-size:0}.filters-panel[open] .filters-toggle:before{content:'收起';font-size:12px}.filters-panel[open] .filters-chevron{font-size:18px}
+.filters-footer{display:flex;justify-content:flex-end;padding:0 20px 16px}.filters-footer button{border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-secondary);font-size:12px;padding:8px 12px;cursor:pointer}.filters-footer button:hover{color:var(--accent);border-color:var(--accent)}
+@media(max-width:420px){.filters-header-actions{flex-direction:row;align-items:center;gap:10px}.filters-heading>div>span{display:none}}
+
+
+</style>
   <script src="/vendor/chart.umd.min.js"></script>
   <script>if (typeof Chart !== "undefined") Chart.defaults.animation = false;</script>
 </head>
@@ -213,24 +256,36 @@ html.theme-dark{--bg:#101b17;--surface:#192823;--surface-hover:#23382e;--border:
   <div><div class="kicker"><span class="kicker-line"></span> 采购决策 <span class="kicker-index">/ 增量分析</span></div><h1 id="title">采购增量分析<span class="hero-dot">.</span></h1><p>找到需求持续增长、值得进一步谈判的物料。</p></div>
   <div class="hero-note"><span>本期数据归档于</span><strong id="archiveDate">—</strong><small>含税金额 · 近 12 个月</small></div>
 </section>
+<nav class="view-tabs" role="tablist" aria-label="看板页面">
+  <button id="analysisTab" type="button" role="tab" aria-selected="true" aria-controls="analysisView">采购分析</button>
+  <button id="indicatorsTab" type="button" role="tab" aria-selected="false" aria-controls="indicatorsView" tabindex="-1">指标说明</button>
+</nav>
+<div id="analysisView" role="tabpanel" aria-labelledby="analysisTab">
 <section class="overview animate delay-2" aria-label="候选概览">
   <article class="summary-lead"><span class="summary-label">本期候选物料</span><div class="summary-total"><strong id="total">—</strong><span>个</span></div><span class="summary-caption">已通过范围、金额及近期采购条件</span><div class="summary-line" aria-hidden="true"></div></article>
-  <article class="summary-distribution"><div class="distribution-top"><div><span class="summary-label">候选优先级分布</span><p>按已确认的指标规则分档</p></div><span class="period-tag">含税口径</span></div><div class="distribution-bar" role="img" aria-label="候选物料按优先级分布"><span id="barPriority"></span><span id="barObserve"></span><span id="barAvoid"></span></div><div class="distribution-legend"><div><span class="legend-dot priority-dot"></span><span>优先谈判</span><strong id="priority">—</strong></div><div><span class="legend-dot observe-dot"></span><span>观察</span><strong id="observe">—</strong></div><div><span class="legend-dot avoid-dot"></span><span>不建议</span><strong id="avoid">—</strong></div></div><p class="coverage-note">数据覆盖仍待业务核实<span class="archive-inline"> · 归档于 <span id="archiveDateMobile">—</span></span></p></article>
+  <article class="summary-distribution"><div class="distribution-top"><div><span class="summary-label">候选优先级分布</span><p>按已确认的指标规则分档</p></div><span class="period-tag">含税口径</span></div><div class="distribution-bar" role="img" aria-label="候选物料按优先级分布"><span id="barPriority"></span><span id="barObserve"></span><span id="barAvoid"></span></div><div class="distribution-legend"><div><span class="legend-dot priority-dot"></span><span>优先谈判</span><strong id="priority">—</strong></div><div><span class="legend-dot observe-dot"></span><span>观察</span><strong id="observe">—</strong></div><div><span class="legend-dot avoid-dot"></span><span>不建议</span><strong id="avoid">—</strong></div></div><p class="coverage-note"><span id="coverageText">数据覆盖仍待业务核实</span><span class="archive-inline"> · 归档于 <span id="archiveDateMobile">—</span></span></p></article>
 </section>
 <section class="workspace animate delay-3" aria-labelledby="materialsTitle">
   <div class="section-top"><div><div class="section-kicker">01 <span></span> CANDIDATES</div><h2 id="materialsTitle">谈判候选</h2><p>选择物料，查看增长趋势及采购明细。</p></div><div class="section-side">按业务规则筛选 <span>↘</span></div></div>
-  <div class="toolbar"><label class="search-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="search" placeholder="搜索物料编码、名称或供应商" aria-label="搜索物料"></label><label class="select-wrap"><span>优先级</span><select id="level" aria-label="谈判优先级"><option value="">全部</option><option>优先谈判</option><option>观察</option><option>不建议</option></select></label></div>
-  <div class="filters-panel" aria-label="候选筛选条件">
-    <label class="filter-field"><span>核心供应商</span><input id="filterSupplier" type="search" placeholder="输入供应商名称"></label>
-    <label class="filter-field"><span>主单位</span><select id="filterUnit"><option value="">全部单位</option></select></label>
-    <label class="filter-field"><span>近12个月含税金额 ≥（万）</span><input id="amountMin" type="number" step="any" placeholder="不限"></label>
-    <label class="filter-field"><span>近12个月含税金额 ≤（万）</span><input id="amountMax" type="number" step="any" placeholder="不限"></label>
-    <label class="filter-field"><span>采购量趋势指数 ≥（%）</span><input id="growthMin" type="number" step="any" placeholder="不限"></label>
-    <label class="filter-field"><span>单一供应商占比 ≥（%）</span><input id="shareMin" type="number" step="any" placeholder="不限"></label>
-    <label class="filter-field"><span>备货嫌疑</span><select id="stockFilter"><option value="">全部</option><option value="true">是</option><option value="false">否</option></select></label>
-    <div class="filters-actions"><button id="clearFilters" type="button">清空筛选</button></div>
-  </div>
-  <div class="table-meta"><span id="status" role="status">正在读取…</span><span>左右滚动查看全部汇总指标 · 选择物料查看月度和明细</span></div>
+
+  <div class="toolbar"><label class="search-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="search" placeholder="搜索物料编码或名称" aria-label="搜索物料"></label><label class="select-wrap"><span>优先级</span><select id="level" aria-label="谈判优先级"><option value="">全部</option><option>优先谈判</option><option>观察</option><option>不建议</option></select></label></div>
+  <details class="filters-panel" aria-labelledby="filtersTitle">
+    <summary class="filters-header">
+      <div class="filters-heading"><span class="filters-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M7 12h10M10 17h4"/><circle cx="8" cy="7" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg></span><div><strong id="filtersTitle">指标筛选</strong><span>填写区间，结果即时更新</span></div></div>
+      <div class="filters-header-actions"><span id="filterCount" class="filter-count" aria-live="polite">全部指标</span><span class="filters-toggle" aria-hidden="true">展开 <span class="filters-chevron">⌄</span></span></div>
+    </summary>
+    <div class="filters-grid">
+    <div class="filter-field"><span>近12个月含税金额（万）</span><div class="filter-range"><input id="amountMin" type="number" step="any" placeholder="下限" aria-label="近12个月含税金额（万）下限"><span>至</span><input id="amountMax" type="number" step="any" placeholder="上限" aria-label="近12个月含税金额（万）上限"></div></div>
+    <div class="filter-field"><span>采购量趋势指数（%）</span><div class="filter-range"><input id="growthMin" type="number" step="any" placeholder="下限" aria-label="采购量趋势指数（%）下限"><span>至</span><input id="growthMax" type="number" step="any" placeholder="上限" aria-label="采购量趋势指数（%）上限"></div></div>
+    <div class="filter-field"><span>最近1个月环比增长率（%）</span><div class="filter-range"><input id="momMin" type="number" step="any" placeholder="下限" aria-label="最近1个月环比增长率（%）下限"><span>至</span><input id="momMax" type="number" step="any" placeholder="上限" aria-label="最近1个月环比增长率（%）上限"></div></div>
+    <div class="filter-field"><span>连续增长月数（月）</span><div class="filter-range"><input id="streakMin" type="number" step="1" placeholder="下限" aria-label="连续增长月数（月）下限"><span>至</span><input id="streakMax" type="number" step="1" placeholder="上限" aria-label="连续增长月数（月）上限"></div></div>
+    <div class="filter-field"><span>半年同比（%）</span><div class="filter-range"><input id="halfMin" type="number" step="any" placeholder="下限" aria-label="半年同比（%）下限"><span>至</span><input id="halfMax" type="number" step="any" placeholder="上限" aria-label="半年同比（%）上限"></div></div>
+    <div class="filter-field"><span>逐季抬升次数（次）</span><div class="filter-range"><input id="quarterMin" type="number" step="1" placeholder="下限" aria-label="逐季抬升次数（次）下限"><span>至</span><input id="quarterMax" type="number" step="1" placeholder="上限" aria-label="逐季抬升次数（次）上限"></div></div>
+    <div class="filter-field"><span>最近3个月采购量占比（%）</span><div class="filter-range"><input id="shareMin" type="number" step="any" placeholder="下限" aria-label="最近3个月采购量占比（%）下限"><span>至</span><input id="shareMax" type="number" step="any" placeholder="上限" aria-label="最近3个月采购量占比（%）上限"></div></div>
+    </div>
+    <div class="filters-footer"><button id="clearFilters" type="button">清空筛选</button></div>
+  </details>
+  <div class="candidate-heading"><div><h3>候选清单</h3><span id="status" role="status">正在读取…</span></div><span class="candidate-hint">选择物料查看月度及采购明细 <span aria-hidden="true">↗</span></span></div>
   <div class="table-scroll candidate"><table><thead id="materialHead"></thead><tbody id="materials"></tbody></table></div>
   <div class="pager"><span id="materialPage"></span><div><button id="materialPrev" type="button">上一页</button><button id="materialNext" type="button">下一页 <span aria-hidden="true">→</span></button></div></div>
 </section>
@@ -243,6 +298,36 @@ html.theme-dark{--bg:#101b17;--surface:#192823;--surface-hover:#23382e;--border:
   <div class="detail-filters"><input id="supplier" placeholder="供应商名称（精确）" aria-label="供应商名称（精确）"><input id="company" placeholder="公司名称（精确）" aria-label="公司名称（精确）"><button id="filterDetails" type="button">筛选明细</button></div>
   <div class="table-scroll details"><table><thead id="detailHead"></thead><tbody id="detailBody"></tbody></table></div>
   <div class="pager"><span id="pageLabel"></span><div><button id="prev" type="button">上一页</button><button id="next" type="button">下一页 <span aria-hidden="true">→</span></button></div></div>
+</section>
+</div>
+<section id="indicatorsView" class="indicator-page" role="tabpanel" aria-labelledby="indicatorsTab" hidden>
+  <div class="indicator-page-heading"><h2>指标说明</h2><p>查看指标含义和计算口径。</p></div>
+  <div class="indicator-guide" id="indicatorGuide">
+    <div class="guide-content">
+      <p class="guide-intro">以下数量均为采购净量，退货冲减；金额为含税净额，单位为万元。窗口为业务结束月及之前 11 个月。缺少有效基期时，增长率显示为空。</p>
+      <dl class="guide-list">
+
+        <div><dt>谈判优先级</dt><dd><strong>优先谈判：</strong>近 3 个月月均量比前 3 个月增长至少 20%，且最新月环比至少增长 10% 或连续增长至少 2 个月；或者逐季抬升至少 2 次且半年同比至少增长 50%。<strong>观察：</strong>不符合优先条件，但近 3 个月月均量比前 3 个月增长至少 10%。<strong>不建议：</strong>其余情况，包括前 3 个月月均量不大于 0、缺少增长基线。按顺序判断。</dd></div>
+        <div><dt>月采购净量</dt><dd>该物料当月数量合计，退货按负数冲减。</dd></div>
+        <div><dt>月含税金额</dt><dd>该物料当月采购金额合计，红字金额冲减。</dd></div>
+        <div><dt>最近 12 个月采购净量</dt><dd>窗口内各月采购净量之和；同一物料存在多个主单位时不展示总量。</dd></div>
+        <div><dt>最近 12 个月含税金额</dt><dd>窗口内各月含税金额之和。</dd></div>
+        <div><dt>最近 3 个月平均采购量</dt><dd>最近 3 个月的月采购净量合计 ÷ 3。</dd></div>
+        <div><dt>前 3 个月平均采购量</dt><dd>最近 3 个月之前的 3 个月，月采购净量合计 ÷ 3。</dd></div>
+        <div><dt>采购量趋势指数</dt><dd>最近 3 个月平均采购量 ÷ 前 3 个月平均采购量 − 1；前 3 个月月均量不大于 0 时为空。</dd></div>
+        <div><dt>最近 1 个月环比增长率</dt><dd>最新月净采购量 ÷ 上月净采购量 − 1；上月净采购量不大于 0 时为空。</dd></div>
+        <div><dt>连续增长月数</dt><dd>从最新月向前，连续环比增长大于 0 的月数；遇到未增长或无法计算时中断。</dd></div>
+        <div><dt>最近 3 个月采购量占比</dt><dd>最近 3 个月净采购量 ÷ 最近 12 个月净采购量；全年净量为 0 时为空。此项为参考，不直接参与分档。</dd></div>
+        <div><dt>半年同比</dt><dd>后 6 个月月均量 ÷ 前 6 个月月均量 − 1；前 6 个月月均量不大于 0 时为空。比较的是同一窗口前后两个半年。</dd></div>
+        <div><dt>逐季抬升次数</dt><dd>将 12 个月分成 4 个季度，比较相邻季度的月均量，后一个季度高于前一个季度计 1 次，共 0 至 3 次。</dd></div>
+
+        <div><dt>核心供应商</dt><dd>窗口内该物料含税净额最高的供应商；金额相同时按供应商名称排序。</dd></div>
+        <div><dt>核心供应商含税金额</dt><dd>核心供应商在窗口内的该物料含税采购净额。</dd></div>
+        <div><dt>单一供应商供货占比</dt><dd>核心供应商含税净额 ÷ 物料含税净额；物料净额为 0 时为空。退货冲减可能使占比超过 100%。</dd></div>
+
+      </dl>
+    </div>
+  </div>
 </section>
 <footer class="page-footer"><span>供应链分析 / 采购增量</span><span>金额单位：万元 · 含税　 /　 由本地数据生成</span></footer>
 
@@ -356,8 +441,7 @@ async function api(path,params){
 function addCell(tr,v,name){var c=document.createElement('td');if(name==='谈判优先级'){var tag=document.createElement('span');tag.className='tag';tag.textContent=value(v);c.appendChild(tag)}else{c.textContent=value(v);c.title=value(v)}tr.appendChild(c)}
 function formatField(name,v){
   if(v===null||v===undefined||v==='')return v;
-  if(name==='备货嫌疑')return String(v).toLowerCase()==='true'?'是':String(v).toLowerCase()==='false'?'否':v;
-  var ratios=['采购量趋势指数','最近1个月环比增长率','单一供应商供货占比','半年同比','最近3个月采购量占比','免费数量占比'];
+  var ratios=['采购量趋势指数','最近1个月环比增长率','单一供应商供货占比','半年同比','最近3个月采购量占比'];
   var amounts=['最近12个月采购净量','最近12个月含税金额万','核心供应商含税金额万','最近3个月平均采购量','前3个月平均采购量'];
   if((ratios.includes(name)||amounts.includes(name))&&Number.isFinite(Number(v))){var n=Number(v);return ratios.includes(name)?(n*100).toLocaleString('zh-CN',{maximumFractionDigits:1})+'%':n.toLocaleString('zh-CN',{maximumFractionDigits:2})}
   if(name==='出入库日期'&&/^\d{4}-\d{2}-\d{2}T00:00:00$/.test(v))return v.slice(0,10);
@@ -373,16 +457,13 @@ function meetsThreshold(raw, input, direction, scale){
 }
 function renderMaterials(){
   var q=el('search').value.trim().toLowerCase(),level=el('level').value,body=el('materials');
-  var supplier=el('filterSupplier').value.trim().toLowerCase(),unit=el('filterUnit').value,stock=el('stockFilter').value;
-  var amountMin=el('amountMin').value,amountMax=el('amountMax').value,growthMin=el('growthMin').value,shareMin=el('shareMin').value;
-  var invalidRange=amountMin!==''&&amountMax!==''&&Number(amountMin)>Number(amountMax);
-  var rows=state.rows.filter(function(r){return !invalidRange&&(!level||r['谈判优先级']===level)&&[r['物料编码'],r['物料名称'],r['核心供应商名称']].some(function(x){return value(x).toLowerCase().includes(q)})
-    &&(!supplier||value(r['核心供应商名称']).toLowerCase().includes(supplier))&&(!unit||r['主单位']===unit)
-    &&(!stock||String(r['备货嫌疑']).toLowerCase()===stock)
-    &&meetsThreshold(r['最近12个月含税金额万'],amountMin,'min')&&meetsThreshold(r['最近12个月含税金额万'],amountMax,'max')
-    &&meetsThreshold(r['采购量趋势指数'],growthMin,'min',100)&&meetsThreshold(r['单一供应商供货占比'],shareMin,'min',100)});
+  var activeCount=metricFilters.filter(function(f){return el(f.min).value!==''||el(f.max).value!==''}).length;
+  el('filterCount').textContent=activeCount?'已设置 '+activeCount+' 项':'全部指标';
+  var invalidRange=metricFilters.some(function(f){var min=el(f.min).value,max=el(f.max).value;return min!==''&&max!==''&&Number(min)>Number(max)});
+  var rows=state.rows.filter(function(r){return !invalidRange&&(!level||r['谈判优先级']===level)&&[r['物料编码'],r['物料名称']].some(function(x){return value(x).toLowerCase().includes(q)})
+    &&metricFilters.every(function(f){return meetsThreshold(r[f.field],el(f.min).value,'min',f.scale)&&meetsThreshold(r[f.field],el(f.max).value,'max',f.scale)})});
   var size=50,max=Math.max(1,Math.ceil(rows.length/size));state.materialPage=Math.min(state.materialPage,max);
-  el('status').textContent=invalidRange?'金额下限不能大于上限':'筛选结果 '+rows.length.toLocaleString()+' / '+state.rows.length.toLocaleString()+' 个物料';el('materialPage').textContent='第 '+state.materialPage+' / '+max+' 页';el('materialPrev').disabled=state.materialPage<=1;el('materialNext').disabled=state.materialPage>=max;
+  el('status').textContent=invalidRange?'筛选下限不能大于上限':'筛选结果 '+rows.length.toLocaleString()+' / '+state.rows.length.toLocaleString()+' 个物料';el('materialPage').textContent='第 '+state.materialPage+' / '+max+' 页';el('materialPrev').disabled=state.materialPage<=1;el('materialNext').disabled=state.materialPage>=max;
   if(state.material&&!rows.some(function(row){return String(row['物料编码'])===state.material})){state.material='';state.request++;el('drill').hidden=true;el('detailSection').hidden=true}
   drawHead('materialHead',state.columns);body.replaceChildren();
   rows.slice((state.materialPage-1)*size,state.materialPage*size).forEach(function(r){var tr=document.createElement('tr');tr.className='pick'+(String(r['物料编码'])===state.material?' active':'');tr.tabIndex=0;tr.setAttribute('aria-label','查看物料 '+value(r['物料名称'])+' '+value(r['物料编码']));state.columns.forEach(function(name){addCell(tr,formatField(name,r[name]),name)});tr.addEventListener('click',function(){selectMaterial(r).catch(showError)});tr.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();selectMaterial(r).catch(showError)}});body.appendChild(tr)})
@@ -390,8 +471,7 @@ function renderMaterials(){
 async function loadReport(){
   var month=el('period').value;state.month=month;state.material='';state.request++;el('drill').hidden=true;el('detailSection').hidden=true;el('status').textContent='正在读取…';var res=await api('/api/report',{month:month});if(state.month!==month)return;
   state.rows=res.data.rows;state.columns=res.data.columns;state.materialPage=1;
-  var units=Array.from(new Set(state.rows.map(function(row){return row['主单位']}).filter(Boolean))).sort(),previousUnit=el('filterUnit').value;
-  el('filterUnit').replaceChildren(new Option('全部单位',''));units.forEach(function(unit){el('filterUnit').appendChild(new Option(unit,unit))});if(units.includes(previousUnit))el('filterUnit').value=previousUnit;
+  el('coverageText').textContent=month>='2026-10'&&month<='2027-09'?'10 月来源已按板块及非多组织内部交易筛选，业务覆盖待核实':'数据覆盖仍待业务核实';
   el('total').textContent=state.rows.length.toLocaleString();[['priority','barPriority','优先谈判'],['observe','barObserve','观察'],['avoid','barAvoid','不建议']].forEach(function(item){var count=state.rows.filter(function(r){return r['谈判优先级']===item[2]}).length;el(item[0]).textContent=count.toLocaleString();el(item[1]).style.width=(state.rows.length?count/state.rows.length*100:0)+'%'});el('archiveDate').textContent=el('archiveDateMobile').textContent=value(res.archiveDate);renderMaterials();
 }
 var ChartManager={charts:new Map(),safeInit:function(id,config){if(typeof Chart==='undefined'){console.error('Chart.js not loaded');return null}var canvas=el(id);if(!canvas)return null;try{if(this.charts.has(id))this.charts.get(id).destroy();var chart=new Chart(canvas,config);this.charts.set(id,chart);return chart}catch(err){console.error('Chart initialization failed:',err);return null}},destroyAll:function(){this.charts.forEach(function(chart){chart.destroy()});this.charts.clear()}};
@@ -418,7 +498,34 @@ async function loadDetails(){
   state.total=res.total;el('detailInfo').textContent=(month||'全部月份')+' · '+res.total.toLocaleString()+' 条记录';drawHead('detailHead',res.data.columns);var body=el('detailBody');body.replaceChildren();res.data.rows.forEach(function(row){var tr=document.createElement('tr');res.data.columns.forEach(function(name){addCell(tr,formatField(name,row[name]),name)});body.appendChild(tr)});el('pageLabel').textContent='第 '+page+' / '+Math.max(1,Math.ceil(res.total/res.pageSize))+' 页';el('prev').disabled=page<=1;el('next').disabled=page*res.pageSize>=res.total;
 }
 el('search').addEventListener('input',function(){state.materialPage=1;renderMaterials()});el('level').addEventListener('change',function(){state.materialPage=1;renderMaterials()});el('materialPrev').addEventListener('click',function(){state.materialPage--;renderMaterials()});el('materialNext').addEventListener('click',function(){state.materialPage++;renderMaterials()});el('period').addEventListener('change',function(){loadReport().catch(showError)});el('filterDetails').addEventListener('click',function(){state.page=1;loadDetails().catch(showError)});el('prev').addEventListener('click',function(){state.page--;loadDetails().catch(showError)});el('next').addEventListener('click',function(){state.page++;loadDetails().catch(showError)});el('allMonths').addEventListener('click',function(){chooseMonth('')});
-var filterIds=['filterSupplier','filterUnit','amountMin','amountMax','growthMin','shareMin','stockFilter'];
+function showView(name){
+  var analysis=name==='analysis';
+  el('analysisView').hidden=!analysis; el('indicatorsView').hidden=analysis;
+  el('analysisTab').setAttribute('aria-selected',String(analysis));
+  el('indicatorsTab').setAttribute('aria-selected',String(!analysis));
+  el('analysisTab').tabIndex=analysis?0:-1; el('indicatorsTab').tabIndex=analysis?-1:0;
+  if(analysis && state.material && state.monthly && state.monthly.length) renderTrend();
+}
+['analysis','indicators'].forEach(function(name){
+  var tab=el(name+'Tab');
+  tab.addEventListener('click',function(){showView(name)});
+  tab.addEventListener('keydown',function(event){
+    if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+    event.preventDefault();
+    var target=event.key==='Home'?'analysis':event.key==='End'?'indicators':name==='analysis'?'indicators':'analysis';
+    showView(target); el(target+'Tab').focus();
+  });
+});
+var metricFilters=[
+  {field:'最近12个月含税金额万',min:'amountMin',max:'amountMax',scale:1},
+  {field:'采购量趋势指数',min:'growthMin',max:'growthMax',scale:100},
+  {field:'最近1个月环比增长率',min:'momMin',max:'momMax',scale:100},
+  {field:'连续增长月数',min:'streakMin',max:'streakMax',scale:1},
+  {field:'半年同比',min:'halfMin',max:'halfMax',scale:100},
+  {field:'逐季抬升次数',min:'quarterMin',max:'quarterMax',scale:1},
+  {field:'最近3个月采购量占比',min:'shareMin',max:'shareMax',scale:100}
+];
+var filterIds=metricFilters.flatMap(function(f){return [f.min,f.max]});
 filterIds.forEach(function(id){el(id).addEventListener('input',function(){state.materialPage=1;renderMaterials()});el(id).addEventListener('change',function(){state.materialPage=1;renderMaterials()})});
 el('clearFilters').addEventListener('click',function(){['search','level'].concat(filterIds).forEach(function(id){el(id).value=''});state.materialPage=1;renderMaterials()});
 (async function(){try{var periods=await api('/api/periods');periods.forEach(function(x){var o=document.createElement('option');o.value=o.textContent=x;el('period').appendChild(o)});if(periods.length)await loadReport();else el('status').textContent='暂无已归档结果'}catch(err){showError(err)}})();

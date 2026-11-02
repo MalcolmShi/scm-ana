@@ -47,7 +47,8 @@ def read_details(month: str, material: str, *, purchase_month: str = '', supplie
             raise ValueError('采购月份不在分析窗口内')
         low, high = selected.start_time.date(), selected.end_time.date()
     where = '''_business_day BETWEEN ? AND ? AND CAST(物料编码 AS VARCHAR)=?
-        AND 板块 IN ('检验','检验产品','诊断') AND 供应商类型='外部单位' '''
+        AND 板块 IN ('检验','检验产品','诊断') AND 供应商类型='外部单位'
+        AND NOT (_business_day BETWEEN DATE '2025-02-07' AND DATE '2025-07-01' AND "采购金额(万)" IS NULL) '''
     args = [low, high, material]
     if supplier:
         where += ' AND 供应商名称=?'; args.append(supplier)

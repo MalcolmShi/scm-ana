@@ -80,6 +80,8 @@ def main() -> None:
                            "recent_month_quantity_gt": 0},
             "scope_note": "monthly 包含全部通过金额门槛的物料；detail 另要求近三个月每月净采购量大于零。",
             "coverage_note": "业务覆盖及 processed 对应 raw 的历史版本未经独立核实。"}
+    if start <= "2026-10-31" and end >= "2026-10-01":
+        meta["coverage_note"] += " 2026-10 来源文件限定检验、检验产品、诊断板块和非多组织内部交易；源文件覆盖完整性待核实。"
     meta["inputs"] = [{"layer": "processed", "dataset": "procurement_inbound", "start": start, "end": end, "partitions": source_meta["partitions"]}]
     write_outputs("procurement_increment", end, tables, meta)
     _, saved = storage.read_outputs("procurement_increment", end)
