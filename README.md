@@ -9,7 +9,7 @@
 | 环节 | 内容 | 状态 |
 | --- | --- | --- |
 | ① 数据获取 | 读取上游导出的采购入库文件，原样归档 | 已实现 |
-| ② 识别机会 | 采购增量分析，识别采购量增长信号，产出谈判候选清单 | 已实现 |
+| ② 识别机会 | 采购增量分析，识别采购量增长信号，产出谈判候选清单 | 新口径验证中，旧脚本待调整 |
 | ③ 分派执行 | 谈判候选分派给采购员，跟进执行与反馈 | 业务方案（见 [分派与反馈](分派与反馈.md)） |
 | ④ 降本统计 | 基于事实核算实际降本，输出统计报告和看板 | 方案已确认（见 [采购降本自动化核算方案](notebooks/采购降本统计/采购降本自动化核算方案.md)） |
 
@@ -19,7 +19,7 @@
 
 | 场景 | 状态 | 入口 | 交付物 |
 | --- | --- | --- | --- |
-| [采购增量分析](notebooks/采购增量分析/采购增量分析.md) | 已落地 | `uv run python scripts/run_analysis.py` | `outputs/reports/…采购增量分析报告.xlsx`（谈判候选四档） |
+| [采购增量分析](notebooks/采购增量分析/分析方案.md) | 新口径验证中 | `notebooks/采购增量分析/采购增量分析.ipynb` | 月度候选报表及归档方案待确认 |
 | [采购降本统计](notebooks/采购降本统计/采购降本自动化核算方案.md) | 方案已确认 | 待落地（DDL + 核算脚本） | 月度降本统计报表（六类核算口径） |
 
 `notebooks/数据清洗/` 是数据源级共享工作区（不属于任何场景）：接入方案与清洗研究放这里，产出被所有场景复用。
@@ -46,7 +46,7 @@ scm-ana/
 ├── src/                           # 代码分层：与场景解耦的引擎
 │   ├── paths.py                   # 项目路径与上海时区
 │   ├── archive.py                 # 存储层：parquet 归档的路径规则与读写（raw/processed/outputs 三层）
-│   ├── read_data.py               # 取数门面：read_inbound(start, end, columns)
+│   ├── read_data.py               # 显式读取 raw、processed 和 outputs
 │   ├── pipeline.py                # 流水线：analyze()，取数 → 分析 → 导出
 │   ├── sources/procurement_inbound.py  # 数据源层：口径 + 取数 + Excel 导入（一来源一模块）
 │   ├── analysis/procurement_increment.py  # 分析层：一场景一模块（Config + run_analysis + export）
@@ -79,10 +79,11 @@ data/outputs/采购增量分析/2026/2026-09/2026-09-30/data.json
 
 路径统一为 `data/<层>/<名称>/<YYYY>/<YYYY-MM>/<YYYY-MM-DD>/data.parquet`，一天一个业务日期。
 来源 id（raw / processed）用小写连字符；outputs 层的 `<名称>` 是**场景名**，与 `notebooks/<场景>/` 同名。
-outputs 层每张表落两份：`data.parquet` 给复算与对拍，`data.json` 给看板取数（`meta` + `tables`），由
-`reporting.metrics.archive_metrics()` 一次运行同时产出。
+当前 `reporting.metrics.archive_metrics()` 将主表写为 `data.parquet`，主表和其他表写入 `data.json`；
+多表 parquet 与批次归档尚未实现。
 raw 是来源文件的原样转换：列名、取值和单位都不动，只追加 `_source` 和 `_fetched_at` 两列元数据。
-清洗由业务侧单独处理，底表写入 `data/processed/`；分析优先读底表，没有底表时直接读 raw。
+清洗后的底表写入 `data/processed/`。新的读取接口显式指定层，不自动回退；旧版 `read_inbound()`
+仍保留逐日优先 processed、缺失时回退 raw 的行为，仅供旧代码兼容。
 
 目录日期 = 记录里的「出入库日期」；节假日没有入库就没有文件。同一业务日重复归档原子替换当天文件。
 
@@ -94,31 +95,29 @@ raw 是来源文件的原样转换：列名、取值和单位都不动，只追�
 ```bash
 uv sync          # 首次或 pyproject 变更后执行，含 dev 组（jupyterlab、ipykernel）
 
-# 分析直接读 data/raw 的日档 parquet，无需上游文件
-uv run python scripts/run_analysis.py
+# 当前已确认的含税口径在指标验证 notebook 中；旧分析脚本尚未与该口径对齐
+uv run jupyter lab notebooks/采购增量分析/采购增量分析.ipynb
 ```
 
-查看归档、只跑数不落文件：
+查看已有归档：
 
 ```bash
 uv run python scripts/sync_data.py --list
-uv run python scripts/run_analysis.py --start-date 2025-10-01 --end-date 2026-09-30 --dry-run
 ```
 
-取数就一句，返回 DataFrame。参数个数决定语义，参数精度决定粒度：
+显式读取各层，普通接口返回 DataFrame：
 
 ```python
-from read_data import read_inbound
+from read_data import read_raw_procurement_inbound, read_processed_procurement_inbound, read_outputs
 
-read_inbound("2026-09-30")          # 一天
-read_inbound("2026-09")             # 一个月
-read_inbound("2026")                # 一年
-read_inbound("2026-01", "2026-09")  # 一个范围，两边都含
-read_inbound(columns=["出入库日期", "数量"])   # 全部日期 + 列裁剪
+raw = read_raw_procurement_inbound("2026-09")
+processed = read_processed_procurement_inbound("2025-10", "2026-09")
+report = read_outputs("采购增量分析", "2026-09-30")  # 已存在的主结果表
 ```
 
-`--start-date` / `--end-date` 选择取数窗口（写法和 `read_inbound` 一致），`--end-month` 选择业务结束月，
-`--window-months` 决定分析窗口长度。报告写入 `outputs/reports/<业务结束日>/`，内容包含数据文件与转换时间。
+一个日期参数表示整年、整月或当天；两个参数表示闭区间。采购入库 processed 读取会检查已知 raw 日档
+是否缺少对应 processed；业务覆盖和输入版本一致性尚未核实，可用对应 `_meta()` 接口查看说明。
+`read_outputs` 当前只支持指定业务日的主表，尚不支持指定结果表或历史批次。
 
 使用 notebooks（`uv sync` 已装好 jupyterlab 和 ipykernel）：
 

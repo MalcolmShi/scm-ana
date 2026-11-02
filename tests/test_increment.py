@@ -145,6 +145,16 @@ class NewMaterialTests(unittest.TestCase):
 
 
 class MonthlyColumnTests(unittest.TestCase):
+    def test_each_recent_month_must_have_positive_net_quantity(self):
+        data = pd.concat([
+            _rows(2001, "正常采购", [10] * 12, [1.0] * 12, "供应商"),
+            _rows(2002, "零采购", [10] * 9 + [1, 0, 10], [1.0] * 12, "供应商"),
+            _rows(2003, "净退货", [10] * 9 + [1, -2, 10], [1.0] * 12, "供应商"),
+        ], ignore_index=True)
+        with reading_from(data):
+            report = run_analysis(Config())["report"]
+        self.assertEqual(set(report["物料编码"]), {2001})
+
     def test_single_price_column_in_yuan(self):
         """曾经同时存在 月加权平均价(万元) 和 月加权平均价(元)，单位冲突。"""
         monthly = Fixture().run()["monthly"]

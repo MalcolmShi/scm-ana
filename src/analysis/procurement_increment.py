@@ -281,7 +281,7 @@ def add_monthly_metrics(group: pd.DataFrame) -> pd.DataFrame:
         quantity.rolling(3, min_periods=3).sum() / quantity.rolling(12, min_periods=12).sum()
     )
     group["最近12个月累计采购不含税金额(万)"] = amount.rolling(12, min_periods=12).sum()
-    group["最近3个月零采购月份"] = (quantity == 0).rolling(3, min_periods=3).sum()
+    group["最近3个月非正采购月份"] = (quantity <= 0).rolling(3, min_periods=3).sum()
     group["月加权平均价(元)"] = amount * 10000 / quantity.replace(0, np.nan)
     return group
 
@@ -338,7 +338,7 @@ def classify_priority(row: pd.Series) -> str:
 
 
 def build_report(monthly: pd.DataFrame, core_supplier: pd.DataFrame) -> pd.DataFrame:
-    """取每物料最后一个月指标，过滤零采购，分类并排序。"""
+    """取每物料最后一个月指标，过滤近期净采购量非正的物料，分类并排序。"""
     latest = (
         monthly.sort_values(["物料编码", "年月"])
         .groupby("物料编码", as_index=False)
@@ -348,7 +348,7 @@ def build_report(monthly: pd.DataFrame, core_supplier: pd.DataFrame) -> pd.DataF
             on="物料编码", how="left",
         )
     )
-    latest = latest.loc[latest["最近3个月零采购月份"] == 0].copy()
+    latest = latest.loc[latest["最近3个月非正采购月份"] == 0].copy()
 
     latest["谈判优先级"] = latest.apply(classify_priority, axis=1)
     latest["_排序"] = latest["谈判优先级"].map(PRIORITY_ORDER)
