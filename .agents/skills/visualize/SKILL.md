@@ -17,7 +17,7 @@ metadata:
 ---
 
 > **本项目约定：**
-> - 根据用户确认的交付方式构建；采购增量当前使用仅监听本机的服务和 DuckDB 下钻，不强制静态单文件或内嵌 JSON。
+> - 根据用户确认的交付方式构建；采购增量当前使用仅监听本机的服务和 DuckDB 下钻，页面通过本地服务查询 DuckDB。
 > - 如果用户明确要独立静态文件，再使用下文单文件骨架及内嵌数据方式。
 > - 颜色方向、单位、精度和空值语义遵循 `.agents/skills/data-ana/SKILL.md` 与场景方案。
 
@@ -454,7 +454,6 @@ Chart slides in presentations MUST follow the same container standards as dashbo
 
 When user provides data:
 - **CSV** — parse with JS, auto-detect headers, render appropriate chart type
-- **JSON** — extract keys as labels, values as data, nested objects as series
 - **Tables** — convert to visual comparison or chart
 - **Numbers in text** — extract and highlight as stat cards
 - **URLs** — crawl, extract key info, visualize as summary
@@ -465,7 +464,7 @@ This skill is used mid-conversation. Leverage everything:
 
 - **Conversation context** — summarize, structure, or visualize what's been discussed
 - **URLs/links** — crawl and extract content, then visualize
-- **Pasted data** — CSV, JSON, tables → charts, dashboards
+- **Pasted data** — tables → charts, dashboards
 - **Ideas/concepts** — turn abstract discussions into visual diagrams
 - **Code/architecture** — visualize system designs, data flows
 

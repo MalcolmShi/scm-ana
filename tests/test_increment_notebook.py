@@ -1,5 +1,5 @@
 """验证新口径 notebook 的增长指标与分类边界。"""
-import json
+import nbformat
 import unittest
 
 import numpy as np
@@ -11,7 +11,7 @@ from paths import PROJECT_ROOT
 class IncrementNotebookTests(unittest.TestCase):
     def test_metrics_and_priority_follow_confirmed_baseline_rules(self):
         path = PROJECT_ROOT / "notebooks/采购增量分析/采购增量分析.ipynb"
-        cells = json.loads(path.read_text())["cells"]
+        cells = nbformat.read(path, as_version=4)["cells"]
         months = pd.period_range("2025-10", "2026-09", freq="M")
         matrix = pd.DataFrame([
             [10] * 9 + [50, 100, 200],

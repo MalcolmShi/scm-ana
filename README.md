@@ -14,7 +14,7 @@
 | outputs | `outputs.procurement_increment__monthly` | 物料月度数量及含税金额 |
 | meta | `meta.partitions`、`meta.output_periods` | 业务日期、数据指纹、归档日期和参数 |
 
-原有 `data/raw/`、`data/processed/` 和 `data/outputs/` 下的 Parquet/JSON 保留为迁移前文件；默认读取不使用它们。数据库包含业务数据，不提交 Git。
+数据库包含业务数据，不提交 Git。
 
 ## 代码边界
 
@@ -27,14 +27,12 @@
 | `src/services/`、`src/web/` | 场景查询、下钻及本地页面 |
 | `scripts/` | 导入、清洗、分析与服务入口 |
 
-新增数据源只补自己的接入、清洗和命名读写入口；新增分析补自己的分析、结果及查询代码，复用通用存储。字段或类型变更需明确处理，存储层不会静默混合。
+当前数据库尚未建立，新的上游接入方式尚未配置。新增数据源只补自己的接入、清洗和命名读写入口；新增分析补自己的分析、结果及查询代码，复用通用存储。字段或类型变更需明确处理，存储层不会静默混合。
 
 ## 使用
 
 ```bash
 uv sync
-uv run python scripts/sync_data.py --list
-uv run python scripts/sync_data.py --dry-run
 uv run python scripts/build_processed.py --start 2026-09 --dry-run
 
 # 默认计算上一个自然月；也可以指定历史月份
@@ -61,11 +59,11 @@ report = read_outputs('procurement_increment', '2026-09-30')
 monthly = read_outputs('procurement_increment', '2026-09-30', 'monthly')
 ```
 
-当前采购数据最新至 2026-09；缺少整月数据时分析入口会停止。数据本身的上游业务覆盖及旧 processed 的原始输入版本仍待核实。
+数据库建立并接入数据后才能运行上述命令；缺少整月数据时分析入口会停止。
 
 ## 方案和确认
 
 - [采购增量分析方案](notebooks/采购增量分析/分析方案.md)
 - [采购增量指标验证](notebooks/采购增量分析/采购增量分析.ipynb)
-- [采购入库清洗确认](notebooks/采购增量分析/数据清洗确认.ipynb)
+- [采购入库清洗确认](notebooks/数据清洗/采购入库清洗确认.ipynb)
 - [数据分析 skill](.agents/skills/data-ana/SKILL.md)

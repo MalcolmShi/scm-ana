@@ -1,5 +1,5 @@
 """清洗确认 notebook 必须读取 raw，即使同日已有 processed。"""
-import json
+import nbformat
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -25,8 +25,8 @@ class CleanNotebookTests(unittest.TestCase):
         with patch.object(storage, "DATABASE", root / "test.duckdb"):
             for layer, frame in (("raw", raw), ("processed", processed)):
                 storage.replace_partition(layer, "procurement_inbound", "2026-09-30", frame)
-            path = PROJECT_ROOT / "notebooks/采购增量分析/数据清洗确认.ipynb"
-            notebook = json.loads(path.read_text())
+            path = PROJECT_ROOT / "notebooks/数据清洗/采购入库清洗确认.ipynb"
+            notebook = nbformat.read(path, as_version=4)
             scope = {"display": lambda value: None}
             duplicate_section = next(i for i, cell in enumerate(notebook["cells"])
                                      if "### 已确认字段相同的记录" in ''.join(cell["source"]))

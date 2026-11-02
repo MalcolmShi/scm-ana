@@ -25,7 +25,7 @@ def main():
         raw, _ = read_raw_procurement_inbound_meta(day)
         cleaned, audit = clean_inbound(raw, drop_duplicates=args.drop_duplicates)
         if not args.dry_run:
-            write_processed_procurement_inbound(day, cleaned, raw_fingerprint=part['fingerprint'])
+            cleaned_parts[day] = cleaned
         rows_before += audit['rows_before']; rows_after += audit['rows_after']
     if not args.dry_run:
         write_processed_procurement_inbound_days(cleaned_parts, raw_fingerprints={part["day"]: part["fingerprint"] for part in parts})

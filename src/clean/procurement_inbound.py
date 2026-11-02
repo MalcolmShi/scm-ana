@@ -1,7 +1,7 @@
 """采购入库清洗：raw 原样日档 → processed 明细底表。
 
 口径来源：``notebooks/采购增量分析/分析方案.md`` §三（业务确认 2026-11-02），
-预演与逐项确认见同目录 ``数据清洗确认.ipynb``，稳定脚本与其对拍一致。
+预演与逐项确认见``notebooks/数据清洗/采购入库清洗确认.ipynb``，稳定脚本与其对拍一致。
 
 - processed 是**明细底表**：27 个标准字段 + 溯源列 ``updated_at``，
   一行一条入库明细，**不做预聚合**；聚合是分析时按需执行的程序逻辑；
@@ -74,8 +74,7 @@ def _text_columns(frame: pd.DataFrame) -> list[str]:
 def _fill_text(series: pd.Series, value: str) -> pd.Series:
     """文本列填充：先转 object 再填。
 
-    pyarrow 支撑的 str 列在「整列为空」时是 null 类型，直接 fillna 会报
-    ``Invalid null value``；单日档就可能踩中，object 填充无此限制。
+    单日数据可能整列为空；转为 object 后填充，避免空列类型影响结果。
     """
     return series.astype("object").fillna(value)
 
@@ -84,7 +83,7 @@ def clean_inbound(frame: pd.DataFrame, drop_duplicates: bool = False,
                   fetched_at: Optional[str] = None) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """套用已确认的清洗规则，返回 ``(清洗后底表, 处置台账)``。
 
-    规则与 ``数据清洗确认.ipynb`` 总账一致（对拍基准）：
+    规则与 ``采购入库清洗确认.ipynb`` 总账一致（对拍基准）：
     ① 文本列 strip + 去 ``\\r\\n\\t``；② 供应商类型空值填「外部单位」；
     ③ 含税单价为空或为负时，使用非空购退单价；④ 出入库日期 → 日期类型；
     ⑤ 整行重复默认保留（项二待业务定夺）；⑥ 采购模式去"合同"后缀归一。

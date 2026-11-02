@@ -1,5 +1,4 @@
 """新口径分析、清洗衔接与多表按周期归档。"""
-import json
 import unittest
 from datetime import datetime, timezone
 from unittest.mock import patch

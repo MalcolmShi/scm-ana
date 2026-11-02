@@ -21,7 +21,7 @@ def make_temp_dir(testcase: unittest.TestCase) -> Path:
 
 
 def inbound_row(**changes):
-    """一行入库明细导出记录的原始字段，列名与上游 Excel 一致。"""
+    """一行采购入库原始字段。"""
     return {
         "分析类型": "入库",
         "年份": 2026,

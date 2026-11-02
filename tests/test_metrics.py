@@ -1,6 +1,7 @@
 """按业务周期事务保存多张结果表。"""
 import unittest
 from unittest.mock import patch
+import numpy as np
 import pandas as pd
 from pandas.testing import assert_frame_equal
 import storage
@@ -14,12 +15,14 @@ class OutputTests(unittest.TestCase):
 
     def test_scene_and_period_are_independent(self):
         a={'detail':pd.DataFrame({'code':['A'], 'values':[[1,2]]}), 'monthly':pd.DataFrame({'month':['2026-09'],'total':[2.]})}
-        storage.replace_outputs('demand','2026-09-30',a,{'scope':'test'})
+        original = {'scope':'test', 'parameters': {'threshold': 5.0, 'flags': [True, None], 'empty': []}}
+        storage.replace_outputs('demand','2026-09-30',a,original)
         b={'detail':pd.DataFrame({'code':['B']})}
         storage.replace_outputs('savings','2026-09-30',b,{})
         actual,meta=storage.read_outputs('demand','2026-09-30','monthly')
         assert_frame_equal(actual,a['monthly'],check_dtype=False)
         self.assertEqual(meta['business_end'],'2026-09-30')
+        self.assertEqual(meta['parameters'],original['parameters'])
         self.assertEqual(meta['archive_date'],meta['generated_at'][:10])
         self.assertEqual(storage.read_outputs('savings','2026-09-30')[0]['code'].tolist(),['B'])
         changed={**a,'monthly':pd.DataFrame({'month':['2026-09'],'total':[3.]})}
@@ -38,3 +41,11 @@ class OutputTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'字段不一致'):
             storage.replace_outputs('demand','2026-09-30',bad,{})
         self.assertEqual(storage.read_outputs('demand','2026-09-30')[0]['code'].tolist(),['A'])
+
+    def test_numpy_scalar_list_round_trip(self):
+        first = {'detail': pd.DataFrame({'codes': [np.array([1, 2], dtype=np.int64)]})}
+        second = {'detail': pd.DataFrame({'codes': [[np.int64(3), np.int64(4)]]})}
+        storage.replace_outputs('demand', '2026-09-30', first, {})
+        storage.replace_outputs('demand', '2026-09-30', second, {})
+        actual, _ = storage.read_outputs('demand', '2026-09-30')
+        self.assertEqual(list(actual['codes'][0]), [3, 4])

@@ -11,9 +11,8 @@ requires-python = ">=3.10"
 dependencies = [
     "pandas>=2.1",
     "numpy>=1.24",
-    "openpyxl>=3.1",
-    "pyarrow>=14",
     "duckdb>=1.5.6",
+    "openpyxl>=3.1.5",
 ]
 
 # 开发/分析工具：uv 默认同步 dev 组，部署时用 uv sync --no-dev 跳过
