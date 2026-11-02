@@ -109,8 +109,9 @@ def read_window(layer: str, dataset: str, start: str, end: str, columns=None, *,
     with connect(read_only=True) as con:
         con.begin()
         parts = _partitions(con, layer, dataset, start, end)
-        if not parts:
-            raise ValueError(f'{layer}.{dataset} 在 {start} 至 {end} 没有数据')
+        exists = con.execute('SELECT count(*) FROM information_schema.tables WHERE table_schema=? AND table_name=?', [layer, dataset]).fetchone()[0]
+        if not exists:
+            raise ValueError(f'数据集尚未建立：{layer}.{dataset}')
         raw_parts = _partitions(con, 'raw', source_dataset, start, end) if source_dataset else []
         frame = con.execute(f'SELECT * EXCLUDE (_business_day) FROM {table} WHERE _business_day BETWEEN ? AND ? ORDER BY _business_day, rowid', [start, end]).fetchdf()
         con.commit()

@@ -48,7 +48,7 @@ def _read(layer: str, dataset: str, start='', end='', columns=None, *, source_da
             raise ValueError(f'processed 缺少日档：{missing}；已过期：{stale}')
         coverage.update(raw_days=sorted(raw), processed_days=sorted(processed),
                         missing_raw_days=sorted(processed.keys() - raw.keys()),
-                        input_versions='未核实' if any(p['source_fingerprint'] is None for p in parts) else '已核实')
+                        input_versions='未核实' if not parts or any(p['source_fingerprint'] is None for p in parts) else '已核实')
     return frame, {'layer': layer, 'dataset': dataset, 'window_start': low, 'window_end': high,
                    'days': [p['day'] for p in parts], 'partitions': parts, 'rows': len(frame), 'coverage': coverage}
 

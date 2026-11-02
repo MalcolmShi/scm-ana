@@ -54,7 +54,7 @@ uv run python scripts/run_dashboard.py --port 18765
 uv run python -m unittest discover -s tests -t tests
 ```
 
-一个日期参数表示整年、整月或当天；两个参数表示闭区间：
+一个日期参数表示整年、整月或当天；两个参数表示闭区间。已建立的数据集在指定窗口无记录时返回保留字段的空 DataFrame；数据库或数据集未建立、processed 已知缺档或过期时明确报错：
 
 ```python
 from read_data import read_raw_procurement_inbound, read_processed_procurement_inbound, read_outputs

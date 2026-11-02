@@ -17,7 +17,7 @@ class LayerTests(unittest.TestCase):
         self.fingerprint=storage.partitions('raw','procurement_inbound','2026-09-30','2026-09-30')[0]['fingerprint']
 
     def test_layers_are_explicit(self):
-        with self.assertRaisesRegex(ValueError,'没有数据'):
+        with self.assertRaisesRegex(ValueError,'数据集尚未建立'):
             read_processed_procurement_inbound('2026-09')
         write_processed_procurement_inbound('2026-09-30',self.cleaned,raw_fingerprint=self.fingerprint)
         assert_frame_equal(read_raw_procurement_inbound('2026-09'),self.raw,check_dtype=False)
@@ -39,3 +39,17 @@ class LayerTests(unittest.TestCase):
         write_raw_procurement_inbound('2026-09-29',self.raw.assign(出入库日期='2026-09-29'))
         with self.assertRaisesRegex(ValueError,'2026-09-29'):
             read_processed_procurement_inbound('2026-09')
+
+    def test_date_windows_without_rows_return_empty_with_columns(self):
+        write_processed_procurement_inbound('2026-09-30',self.cleaned,raw_fingerprint=self.fingerprint)
+        for reader in (read_raw_procurement_inbound, read_processed_procurement_inbound):
+            for args in [('2024',), ('2026-08',), ('2026-09-29',), ('2026-08-01', '2026-08-31')]:
+                result = reader(*args)
+                self.assertTrue(result.empty, args)
+                self.assertEqual(list(result.columns), list(self.raw.columns))
+            self.assertEqual(list(reader('2026-08', columns=['物料编码']).columns), ['物料编码'])
+            self.assertEqual(len(reader('2026-09')), 1)
+            self.assertEqual(len(reader('2026-09-29', '2026-09-30')), 1)
+        _, meta = read_processed_procurement_inbound_meta('2026-08')
+        self.assertEqual(meta['rows'], 0)
+        self.assertEqual(meta['coverage']['input_versions'], '未核实')
