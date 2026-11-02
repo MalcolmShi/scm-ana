@@ -44,6 +44,11 @@ def read_inbound(start: str = "", end: str = "",
                  columns: Optional[List[str]] = None) -> pd.DataFrame:
     """读采购入库明细，返回一张 DataFrame —— 只有数据，没有其他返回值。
 
+    语义只有一条：**有业务侧清洗底表读 processed，没有才读 raw**——业务分析永远
+    拿到的应是当前最干净的一份。清洗确认、raw/processed 对拍这类要明确层级的读取，
+    走来源层显式接口 ``sources.procurement_inbound.read_raw() / read_processed()``，
+    不在本门面上加开关。
+
     - 一个参数：读它代表的**那一个完整周期**，``"2026-09-30"`` 当天、``"2026-09"`` 当月、``"2026"`` 当年
     - 两个参数：读两个边界之间的**范围**，两边都含，精度可以混用
     - 不传参数：全部归档

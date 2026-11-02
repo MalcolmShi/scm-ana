@@ -91,7 +91,8 @@ def preferred_layer(snapshot_date: str) -> str:
 
 def read_range(start: str = "", end: str = "",
                columns: Optional[Iterable[str]] = None,
-               threads: int = 8) -> Tuple[pd.DataFrame, dict]:
+               threads: int = 8,
+               layer: str = "") -> Tuple[pd.DataFrame, dict]:
     """按「出入库日期」读一段区间并拼接成一张表。
 
     Args:
@@ -99,16 +100,25 @@ def read_range(start: str = "", end: str = "",
         end: 终点，写法同上；只在读范围时给。
         columns: 只读这些列，parquet 支持列裁剪。
         threads: 并行读取日档的线程数；日档之间互不依赖，多线程只是加快 IO。
+        layer: 指定读哪一层（``raw`` / ``processed``）；不传按优先级有底表读底表。
+            清洗确认、对拍这类必须对着原始数据的场景要显式钉死 ``raw``。
 
     参数个数决定语义、参数精度决定粒度（见 ``resolve_window``）。
     区间判定用记录里的「出入库日期」：目录日期只用来挑候选文件，最终逐行裁剪，
     所以日档里混了别的日期也不会多读。
     """
+    if layer and layer not in ("raw", "processed"):
+        raise archive.DataStoreError(f"layer 只能是 raw / processed，收到：{layer!r}")
     low, high = resolve_window(start, end)
     whole = not ((start or "").strip() or (end or "").strip())   # 不传参数 = 全部归档
     days = [day for day in available_days() if low <= day <= high]
+    # 显式指定层时只读该层真实存在的日档——缺档宁可少读或报错，不静默换层
+    if layer:
+        days = [day for day in days
+                if archive.snapshot_path(layer, SOURCE_ID, day).is_file()]
     if not days:
-        raise archive.DataStoreError(f"采购入库归档在 {low} ~ {high} 区间没有可读文件")
+        where = f"{low} ~ {high} 区间" + (f"的 {layer} 层" if layer else "")
+        raise archive.DataStoreError(f"采购入库归档在 {where} 没有可读文件")
 
     wanted = list(columns) if columns else None
     # 按出入库日期裁剪必须读到这一列，调用方没要就临时加上，裁完再丢掉。
@@ -116,7 +126,7 @@ def read_range(start: str = "", end: str = "",
     if wanted is not None and DATE_COLUMN not in wanted:
         read_cols = wanted + [DATE_COLUMN]
 
-    plan = [(day, preferred_layer(day)) for day in days]
+    plan = [(day, layer or preferred_layer(day)) for day in days]
     paths = [archive.snapshot_path(layer, SOURCE_ID, day) for day, layer in plan]
 
     def load(path: Path) -> pd.DataFrame:
@@ -146,6 +156,26 @@ def read_range(start: str = "", end: str = "",
         "data_month_range": month_range(combined),
     }
     return combined, meta
+
+
+def read_raw(start: str = "", end: str = "",
+             columns: Optional[Iterable[str]] = None) -> Tuple[pd.DataFrame, dict]:
+    """显式读 **raw 原始层**（上游原样列名，未清洗）。
+
+    清洗确认、口径对拍这类必须对着原始数据的场景用，语义跟取数窗口一致。
+    返回 ``(DataFrame, meta)``，``meta["layer"]`` 恒为 ``raw``。
+    """
+    return read_range(start, end, columns, layer="raw")
+
+
+def read_processed(start: str = "", end: str = "",
+                   columns: Optional[Iterable[str]] = None) -> Tuple[pd.DataFrame, dict]:
+    """显式读 **processed 清洗底表**（27 个标准字段 + updated_at）。
+
+    要标准字段名、或核对清洗结果的场景用；底表缺失的日档会直接报错，
+    不静默回退 raw。返回 ``(DataFrame, meta)``，``meta["layer"]`` 恒为 ``processed``。
+    """
+    return read_range(start, end, columns, layer="processed")
 
 
 def read_day(snapshot_date: Optional[str] = None,
