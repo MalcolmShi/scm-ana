@@ -77,4 +77,4 @@ monthly = read_outputs('procurement_increment', '2026-09-30', 'monthly')
 - [采购增量指标验证](notebooks/采购增量分析/采购增量分析.ipynb)
 - [采购入库清洗确认](notebooks/数据清洗/采购入库清洗确认.ipynb)
 - [数据分析 skill](.agents/skills/data-ana/SKILL.md)
-- [钉钉派发 skill](.agents/skills/dingtalk-dispatch/SKILL.md)：outputs 导出派发任务，写入钉钉多维表「采购增量识别」；固定表见 `config/dingtalk_target.json`，负责人规则见 `src/dispatch_rules.py`（按五级分类）
+- [钉钉派发 skill](.agents/skills/dingtalk-dispatch/SKILL.md)：outputs 导出派发任务，写入钉钉多维表「采购增量识别」；固定表见 `config/dingtalk_target.json`，负责人规则见 `src/dispatch_rules.py`（按五级分类，未命中兜底施敏超）；表内已启用「新增记录通知施敏超」自动化

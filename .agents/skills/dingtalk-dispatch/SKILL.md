@@ -21,10 +21,11 @@ description: 把 DuckDB outputs 的采购增量物料导出为派发任务，写
 - 表已建好 18 个字段，**不再建表、不加字段**；缺字段先向用户确认后处理。
 - 钉钉 API 限制：主字段（首列）建表后无法更换，业务结束月必须保持第一列；不要用 `view-update` 把其他字段排到它前面，会报 `PRIMARY_FIELD_CANNOT_BE_MOVED`。
 
+
 ## 数据口径
 
 1. 记录只能来自 `scripts/export_dispatch_tasks.py` 的输出 `outputs/dingtalk_dispatch_<YYYY-MM>.json`，不得手工编造或修改记录值。
-2. 负责人规则在 `src/dispatch_rules.py`，按物料**五级分类**精确匹配；未命中的分类落到「待分配」，导出时会列出分类和条数。规则来自采购团队分工（袁冬月/徐丹/程新定/李晓玉/史迪威/林飞燕/王林霞/黄桃）：**通用类设备（离心机、纯水机、生物安全柜、其他辅助类设备等）归李晓玉**；检测专用设备跟随对应方法负责人（洗板机→史迪威、分光光度计→林飞燕、核酸蛋白仪→程新定）；荧光计、生物芯片分析仪、血糖及血糖相关参数分析仪、幽门螺旋杆菌分析仪、其他免疫分析仪、染色体待施敏超确认，新增分类先补具体规则再兜底。
+2. 负责人规则在 `src/dispatch_rules.py`，按物料**五级分类**精确匹配；未命中的分类统一兜底给**施敏超**（不再留「待分配」）
 3. 默认取最新归档周期的「优先谈判」；指定历史周期用位置参数 `YYYY-MM`，其他优先级用 `--priority`（`all` 不过滤）。周期未归档时先运行 `uv run python scripts/archive_procurement_increment.py <YYYY-MM>`，不绕过 outputs 直接读 processed。
 
 ## 步骤

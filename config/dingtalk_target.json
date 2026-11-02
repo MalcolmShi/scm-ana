@@ -7,5 +7,15 @@
   "viewId": "N0XUl5q",
   "url": "https://alidocs.dingtalk.com/i/nodes/14lgGw3P8vvePdElTn1v0p3A85daZ90D?iframeQuery=entrance%3Ddata%26sheetId%3DqzEedcw",
   "primaryField": "业务结束月",
-  "upsertKey": ["业务结束月", "物料编码"]
+  "upsertKey": ["业务结束月", "物料编码"],
+  "automation": {
+    "flowId": "G-FLOW-103C6B940374213ED4CB0007",
+    "name": "新增派发记录通知施敏超",
+    "status": "RUNNING",
+    "trigger": "WhenRecordCreated",
+    "condition": "业务结束月非空",
+    "notify": "施敏超（shimc2）",
+    "message": "正文含业务月份、物料名称/编码、近12个月含税金额；卡片带「打开任务表」按钮，链接到整张任务表（非单条记录）",
+    "note": "第一阶段仅通知施敏超；后续可按采购负责人字段扩展为通知对应负责人"
+  }
 }

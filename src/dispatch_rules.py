@@ -8,7 +8,7 @@
 核酸蛋白仪→程新定（分子），其余专用分析仪同理。
 """
 
-DEFAULT_OWNER = '待分配'
+DEFAULT_OWNER = '施敏超'
 
 # 负责人钉钉账号（2026-11-02 从通讯录核对，corpId ding401e19383a789223）
 OWNER_USER_IDS: dict[str, str] = {
@@ -20,6 +20,7 @@ OWNER_USER_IDS: dict[str, str] = {
     '林飞燕': 'linfy1',
     '王林霞': 'wanglx6',
     '黄桃': 'huangtao7',
+    '施敏超': 'shimc2',
 }
 
 # (负责人, [五级分类, ...])，顺序即匹配优先级

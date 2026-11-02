@@ -119,7 +119,7 @@ def main() -> None:
     print(f'负责人分布：{owners}')
     if unmapped:
         detail = '；'.join(f'{cat} {count} 条' for cat, count in unmapped.items())
-        print(f'未匹配规则的分类（{DEFAULT_OWNER}）：{detail}')
+        print(f'未匹配规则的分类（兜底 {DEFAULT_OWNER}）：{detail}')
     print(f'输出文件：{output}')
 
 
