@@ -12,7 +12,6 @@ def main():
     parser.add_argument('--start', default='')
     parser.add_argument('--end', default='')
     parser.add_argument('--dry-run', action='store_true')
-    parser.add_argument('--drop-duplicates', action='store_true')
     args = parser.parse_args()
     low, high = resolve_window(args.start, args.end)
     parts = storage.partitions('raw', 'procurement_inbound', low, high)
@@ -23,7 +22,7 @@ def main():
     for part in parts:
         day = part['day']
         raw, _ = read_raw_procurement_inbound_meta(day)
-        cleaned, audit = clean_inbound(raw, drop_duplicates=args.drop_duplicates)
+        cleaned, audit = clean_inbound(raw)
         if not args.dry_run:
             cleaned_parts[day] = cleaned
         rows_before += audit['rows_before']; rows_after += audit['rows_after']

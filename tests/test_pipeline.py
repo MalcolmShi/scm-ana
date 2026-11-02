@@ -1,5 +1,6 @@
 """从 raw 到 processed、分析和 outputs 的贯通校验。"""
 import unittest
+import sys
 from unittest.mock import patch
 import pandas as pd
 import storage
@@ -9,6 +10,8 @@ from read_data import read_raw_procurement_inbound_meta, read_processed_procurem
 from write_data import write_raw_procurement_inbound_days, write_processed_procurement_inbound_days, write_outputs
 from helpers import make_temp_dir
 from test_clean_inbound import dirty_row, with_standard_columns
+from sources.procurement_inbound import sync_export
+from scripts import build_processed, archive_procurement_increment
 
 
 class PipelineTests(unittest.TestCase):
@@ -47,3 +50,22 @@ class PipelineTests(unittest.TestCase):
             read_processed_procurement_inbound_meta('2025-10','2026-09')
         with self.assertRaisesRegex(ValueError,'已变化'):
             read_outputs_meta('procurement_increment','2026-09-30')
+
+    def test_source_to_monthly_archive(self):
+        root = make_temp_dir(self)
+        months = pd.period_range('2025-10', '2026-09', freq='M')
+        raw = with_standard_columns(pd.DataFrame([
+            dirty_row(出入库日期=str(month.start_time.date()), 物料编码='M1', 数量=qty,
+                      来块='检验', 采购类型名称='定向采购合同')
+            for month, qty in zip(months, [10] * 9 + [20, 30, 40])]))
+        raw['采购金额(万)'] = 1.
+        raw.to_excel(root / '入库明细测试.xlsx', index=False, sheet_name='入库明细（含单价）')
+        with patch('sources.procurement_inbound.local_data_dir', return_value=root):
+            self.assertEqual(sync_export()['rows'], 12)
+        with patch.object(sys, 'argv', ['build_processed']):
+            build_processed.main()
+        with patch.object(sys, 'argv', ['archive_procurement_increment', '2026-09']):
+            archive_procurement_increment.main()
+        report, metadata = read_outputs_meta('procurement_increment', '2026-09-30')
+        self.assertEqual(report['物料编码'].tolist(), ['M1'])
+        self.assertEqual(metadata['input_status'], '已核对')

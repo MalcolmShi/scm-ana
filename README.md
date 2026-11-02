@@ -27,13 +27,19 @@
 | `src/services/`、`src/web/` | 场景查询、下钻及本地页面 |
 | `scripts/` | 导入、清洗、分析与服务入口 |
 
-当前数据库尚未建立，新的上游接入方式尚未配置。新增数据源只补自己的接入、清洗和命名读写入口；新增分析补自己的分析、结果及查询代码，复用通用存储。字段或类型变更需明确处理，存储层不会静默混合。
+采购入库的接入、清洗和分析分别由独立模块负责，统一写入 DuckDB。新增数据源只补自己的接入、清洗和命名读写入口；新增分析补自己的分析、结果及查询代码，复用通用存储。
 
 ## 使用
 
 ```bash
 uv sync
+# 从 .local-data 的采购入库来源依次生成 raw、processed 和月度分析结果
+uv run python scripts/run_procurement_pipeline.py 2026-09
+
+# 也可分步执行
+uv run python scripts/sync_data.py
 uv run python scripts/build_processed.py --start 2026-09 --dry-run
+uv run python scripts/build_processed.py
 
 # 默认计算上一个自然月；也可以指定历史月份
 uv run python scripts/archive_procurement_increment.py
@@ -59,7 +65,7 @@ report = read_outputs('procurement_increment', '2026-09-30')
 monthly = read_outputs('procurement_increment', '2026-09-30', 'monthly')
 ```
 
-数据库建立并接入数据后才能运行上述命令；缺少整月数据时分析入口会停止。
+首次执行接入时创建数据库；缺少整月数据时分析入口会停止。
 
 ## 方案和确认
 
