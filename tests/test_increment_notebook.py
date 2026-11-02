@@ -50,10 +50,9 @@ class IncrementNotebookTests(unittest.TestCase):
         self.assertEqual(report.loc['climb', '谈判优先级'], '优先谈判')
         self.assertEqual(report.loc['watch', '谈判优先级'], '观察')
         self.assertEqual(report.loc['growth', '最近12个月含税金额万'], 12.0)
-        self.assertEqual(report.loc['growth', '品牌'], ['品牌', '另一品牌'])
-        self.assertTrue(set(scope['df1'].columns).issubset(report.reset_index().columns))
-        self.assertLess(report.reset_index().columns.get_loc('谈判优先级'),
-                        report.reset_index().columns.get_loc('供应商名称'))
+        self.assertEqual(report.loc['growth', '最近12个月采购净量'], 440)
+        for field in ['品牌', '供应商名称', '采购月', '出入库日期', '数量', '采购金额(万)', '主单位多值']:
+            self.assertNotIn(field, report.columns)
 
 
 if __name__ == '__main__':

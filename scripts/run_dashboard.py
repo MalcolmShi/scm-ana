@@ -47,6 +47,9 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if route.path == '/':
                 data, content = PAGE.read_bytes(), 'text/html; charset=utf-8'
+            elif route.path in ('/vendor/chart.umd.min.js', '/vendor/html-to-image.js'):
+                data = (PAGE.parent / route.path.lstrip('/')).read_bytes()
+                content = 'text/javascript; charset=utf-8'
             else:
                 if route.path == '/api/periods':
                     frame = pd.DataFrame({'month': service.available_periods()})
@@ -66,6 +69,9 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError, KeyError) as exc:
             data, content = str(exc).encode(), 'text/plain; charset=utf-8'
             self.send_response(400)
+        except FileNotFoundError as exc:
+            data, content = str(exc).encode(), 'text/plain; charset=utf-8'
+            self.send_response(503)
         self.send_header('Content-Type', content)
         self.send_header('Content-Length', str(len(data)))
         for key, value in headers.items():

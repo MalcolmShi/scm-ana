@@ -1,10 +1,13 @@
 <!DOCTYPE html>
-<html lang="zh-CN" class="theme-dark">
+<html lang="zh-CN" class="theme-light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>采购增量分析</title>
   <!-- ADD LANGUAGE FONTS IF NEEDED: e.g. Noto Sans KR for Korean, Noto Sans JP for Japanese -->
+  <!-- <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"> -->
+  <!-- ADD CDN LIBRARIES HERE (Chart.js, Mermaid, etc.) -->
+  <script src="/vendor/html-to-image.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root { interpolate-size: allow-keywords; } /* Enable smooth height:auto transitions (Chrome 129+) */
@@ -151,62 +154,100 @@
     }
     [popover]::backdrop { background: rgba(0,0,0,0.3); }
 
-    /* ===== ADD YOUR STYLES BELOW ===== */
+html.theme-light{--bg:#f6f7f4;--surface:#fff;--surface-hover:#f0f5f1;--border:#dfe6df;--text:#18312b;--text-secondary:#687a72;--accent:#1d6d59;--accent-secondary:#badecc;--positive:#237d63;--negative:#bc5c48;--warning:#ae813c}
+html.theme-dark{--bg:#111a17;--surface:#1a2822;--surface-hover:#24382f;--border:#344b3f;--text:#edf5ee;--text-secondary:#a8bbb0;--accent:#8acbae;--accent-secondary:#345a49;--positive:#8acbae;--negative:#f3a593;--warning:#e8c17d}
+html.theme-dark .metric-primary{background:#376f59}
+body{font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);font-size:16px} body,button,input,select{font-family:inherit} .skip-to-content:focus{color:white}
+#main-content{max-width:1540px;margin:auto;padding:0 48px 48px} .masthead{min-height:78px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);gap:20px}.brand{display:flex;align-items:center;gap:12px;font-size:13px;font-weight:600;letter-spacing:.02em}.brandmark{width:30px;height:30px;background:var(--text);color:var(--bg);display:grid;place-items:center;border-radius:7px;font-weight:700}.brand-sep{color:var(--border);padding:0 3px}.header-right{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--text-secondary);margin-right:58px}.live-dot{height:7px;width:7px;border-radius:50%;background:var(--positive)}.header-divider{height:16px;width:1px;background:var(--border);margin:0 12px}.header-right select{font-weight:600}
+.hero{display:flex;justify-content:space-between;align-items:end;padding:64px 0 42px;gap:24px}.kicker,.section-kicker{display:flex;align-items:center;gap:10px;color:var(--accent);font-size:11px;letter-spacing:.13em;font-weight:700}.kicker-line{width:26px;height:2px;background:var(--accent)}.kicker-index{color:var(--text-secondary);letter-spacing:.03em;margin-left:8px}.hero h1{font-size:clamp(2.5rem,4vw,3.6rem);margin:17px 0 13px}.hero-dot{color:var(--accent)}.hero p,.section-top p{color:var(--text-secondary);line-height:1.65}.hero-note{padding-left:20px;border-left:1px solid var(--border);display:flex;flex-direction:column;gap:4px;min-width:160px}.hero-note span,.hero-note small{color:var(--text-secondary);font-size:12px}.hero-note strong{font-size:19px;font-weight:600}
+.overview{display:grid;grid-template-columns:1.15fr 1fr 1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:12px;overflow:hidden}.metric{background:var(--surface);min-width:0;padding:24px;min-height:158px;display:flex;flex-direction:column;justify-content:space-between}.metric-primary{background:var(--accent);color:#fff}.metric-primary *{color:#fff}.metric-label{font-size:13px;color:var(--text-secondary);display:flex;justify-content:space-between;align-items:center}.metric-index{font-size:11px;opacity:.55}.metric strong{font-size:2.15rem;font-weight:700;letter-spacing:-.04em;line-height:1.15}.metric strong span{font-weight:700}.metric strong i{font-size:1.3rem;font-style:normal;color:var(--text-secondary);font-weight:400}.metric strong.metric-date{font-size:1.55rem;letter-spacing:-.02em}.metric-foot{font-size:12px;color:var(--text-secondary)}.metric-primary .metric-label,.metric-primary .metric-foot{color:#e5f4eb}
+.workspace,.drill-section,.detail-section{margin-top:72px}.section-top{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:28px}.section-kicker span{display:inline-block;width:22px;height:1px;background:var(--accent)}.section-top h2{font-size:2rem;margin:12px 0 7px}.section-side{font-size:12px;color:var(--text-secondary)}.section-side span{font-size:18px;color:var(--accent)}
+.toolbar,.detail-filters{display:flex;align-items:center;gap:10px;margin-bottom:18px}.search-wrap{height:43px;max-width:430px;flex:1;min-width:220px;display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:0 13px;color:var(--text-secondary)}.search-wrap input{border:0;background:transparent;padding:0;min-width:0;width:100%;outline:0}.select-wrap{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text-secondary);padding:0 11px;height:43px;border:1px solid var(--border);border-radius:7px;background:var(--surface)}input,select,button{font:inherit;color:var(--text)}select{border:0;background:transparent;cursor:pointer}button{cursor:pointer}.table-meta{display:flex;justify-content:space-between;gap:12px;margin:0 0 10px;font-size:12px;color:var(--text-secondary)}.table-meta span{color:var(--text-secondary)}
+.table-scroll{overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:9px;max-width:100%}.candidate{max-height:564px}.details{max-height:490px}table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:13px 15px;border-bottom:1px solid var(--border);white-space:nowrap;max-width:320px;overflow:hidden;text-overflow:ellipsis}th{position:sticky;top:0;background:var(--surface);z-index:2;color:var(--text-secondary);font-size:11px;font-weight:600}tr.pick{cursor:pointer}tr.pick:hover,tr.active{background:var(--surface-hover)}tr.pick td:first-child{color:var(--accent);font-weight:600}tr:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.tag{display:inline-block;border-radius:4px;padding:4px 7px;font-size:11px;font-weight:600;color:var(--accent);background:var(--surface-hover)}
+.pager{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-top:16px;font-size:12px;color:var(--text-secondary)}.pager>div{display:flex;gap:8px}.pager button,.outline-button,.detail-filters button{border:1px solid var(--border);background:var(--surface);border-radius:6px;padding:9px 14px;font-size:12px}.pager button:disabled{opacity:.4;cursor:not-allowed}.pager button:hover:not(:disabled),.outline-button:hover{border-color:var(--accent)}
+.trend-panel{border:1px solid var(--border);border-radius:10px;background:var(--surface);padding:24px}.chart-head{display:flex;justify-content:space-between;gap:10px}.chart-head>div{display:flex;flex-direction:column;gap:6px}.chart-title{font-size:15px;font-weight:600}.chart-subtitle,.chart-hint{font-size:12px;color:var(--text-secondary)}.chart-container{height:320px;min-width:0;padding:14px 0 0}.month-buttons{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px}.month-buttons button{min-width:0;background:transparent;border:1px solid transparent;border-radius:5px;color:var(--text-secondary);padding:7px 2px;font-size:10px}.month-buttons button:hover,.month-buttons button.active{color:var(--accent);background:var(--surface-hover);border-color:var(--border)}.detail-filters input{height:42px;padding:0 12px;min-width:0;width:220px;background:var(--surface);border:1px solid var(--border);border-radius:7px;font-size:13px}.detail-filters button{background:var(--accent);color:var(--surface);border-color:var(--accent);height:42px;font-weight:600}.page-footer{border-top:1px solid var(--border);margin-top:80px;padding-top:20px;display:flex;justify-content:space-between;gap:15px;color:var(--text-secondary);font-size:11px}.page-footer span{color:var(--text-secondary)}[hidden]{display:none!important}
+@media(max-width:900px){#main-content{padding:0 24px 40px}.overview{grid-template-columns:1fr 1fr}.hero{padding-top:46px}.hero-note{display:none}.header-right{margin-right:52px}.chart-hint,.section-side{display:none}.month-buttons{grid-template-columns:repeat(6,1fr)}}
+@media(max-width:600px){#main-content{padding:0 16px 32px}.brand{font-size:12px}.header-right label,.header-divider,.header-right .live-dot{display:none}.header-right{font-size:12px}.hero{padding:42px 0 28px}.hero h1{font-size:2.5rem}.metric{padding:18px;min-height:135px}.metric strong{font-size:1.75rem}.metric strong.metric-date{font-size:1.2rem}.workspace,.drill-section,.detail-section{margin-top:56px}.section-top{align-items:start;flex-direction:column}.section-top h2{font-size:2rem}.toolbar,.detail-filters{flex-wrap:wrap}.search-wrap{min-width:100%}.detail-filters input{flex:1 1 170px}.table-meta span:last-child{display:none}.chart-container{height:300px}.trend-panel{padding:16px}.page-footer{flex-direction:column}.viz-menu{right:12px;top:15px}}
+@media(max-width:375px){body{overflow-x:hidden}.metric-foot{font-size:11px}}
+@media print{.viz-menu,.toolbar,.pager,.detail-filters{display:none!important}#main-content{max-width:none;padding:0}.table-scroll{max-height:none;overflow:visible}.chart-container{height:300px}.page-footer{margin-top:35px}}
+/* 采购工作台：概览用于判断，明细用于行动。 */
+html.theme-light{--bg:#f5f6f3;--surface:#fff;--surface-hover:#edf3ef;--border:#e0e7e1;--text:#1d302a;--text-secondary:#718078;--accent:#286b55;--accent-secondary:#b7d4c4}
+html.theme-dark{--bg:#101b17;--surface:#192823;--surface-hover:#23382e;--border:#35483e;--text:#edf5ef;--text-secondary:#a5b6ac;--accent:#8bc9aa;--accent-secondary:#426c58}
+#main-content{max-width:1440px}.masthead{min-height:68px}.brandmark{background:#254b3b;border-radius:9px}.hero{padding:42px 0 28px}.hero h1{font-size:clamp(2.5rem,3.6vw,3.25rem);margin:12px 0 10px}.hero-note{display:flex}.hero-note strong{font-size:16px}.overview{display:grid;grid-template-columns:minmax(235px, .8fr) minmax(0, 1.8fr);gap:0;border:0;border-radius:12px;background:var(--surface);box-shadow:0 8px 30px rgba(24,55,39,.045)}
+.summary-lead{background:#1d4938;color:#fff;position:relative;min-height:166px;padding:24px 30px;display:flex;flex-direction:column;overflow:hidden}.summary-lead>*{color:#fff}.summary-label{font-size:13px;font-weight:600;letter-spacing:.02em}.summary-total{display:flex;align-items:baseline;gap:8px;margin-top:8px}.summary-total strong{font-size:2.8rem;line-height:1.05;letter-spacing:-.04em}.summary-total span{color:#c8ded1;font-size:13px}.summary-caption{color:#d0e2d6;font-size:12px;margin-top:8px}.summary-line{position:absolute;width:190px;height:190px;border:1px solid rgba(255,255,255,.12);border-radius:50%;right:-55px;bottom:-100px;box-shadow:0 0 0 28px rgba(255,255,255,.025),0 0 0 56px rgba(255,255,255,.025)}
+.summary-distribution{padding:22px 30px 18px;min-width:0;border:1px solid var(--border);border-left:0;border-radius:0 12px 12px 0}.distribution-top{display:flex;align-items:start;justify-content:space-between;gap:12px}.distribution-top p,.coverage-note{color:var(--text-secondary);font-size:12px;margin-top:4px}.period-tag{border:1px solid var(--border);border-radius:20px;color:var(--text-secondary);padding:4px 9px;font-size:11px;white-space:nowrap}.distribution-bar{height:8px;display:flex;gap:3px;border-radius:8px;overflow:hidden;margin-top:18px;background:var(--surface-hover)}.distribution-bar span{height:100%;min-width:0}.distribution-bar span:nth-child(1),.priority-dot{background:#2f735b}.distribution-bar span:nth-child(2),.observe-dot{background:#90baa2}.distribution-bar span:nth-child(3),.avoid-dot{background:#d0dcd4}.distribution-legend{display:flex;gap:clamp(20px,4vw,54px);margin-top:15px}.distribution-legend div{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-secondary)}.distribution-legend div>span:not(.legend-dot){color:var(--text-secondary)}.distribution-legend strong{color:var(--text);font-size:15px;margin-left:2px}.legend-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}.coverage-note{margin-top:10px}.workspace{margin-top:48px}.drill-section,.detail-section{margin-top:72px}.section-top{margin-bottom:20px}.section-top h2{font-size:2rem;margin:9px 0 5px}.section-top p{font-size:14px}.toolbar{margin-bottom:14px}.search-wrap{max-width:380px}.table-scroll{box-shadow:0 5px 20px rgba(24,55,39,.025)}.candidate{max-height:540px}th{background:var(--surface-hover);height:42px}th,td{padding:12px 14px}tr.pick td:first-child{position:sticky;left:0;z-index:1;background:var(--surface)}tr.pick:hover td:first-child,tr.active td:first-child{background:var(--surface-hover)}th:first-child{left:0;z-index:3}.tag{border-radius:20px;padding:4px 9px}.page-footer{margin-top:64px}
+@media(max-width:900px){.overview{grid-template-columns:minmax(210px,.8fr) minmax(0,1.4fr)}.hero-note{display:flex}.distribution-legend{gap:20px}.summary-lead{padding:22px}.summary-distribution{padding:20px}}
+.archive-inline{display:none}
+.monthly-scroll{overflow-x:auto;margin-top:12px;border:1px solid var(--border);border-radius:7px}.monthly-scroll table{min-width:900px;table-layout:fixed}.monthly-scroll th,.monthly-scroll td{position:static;padding:10px;text-align:right;white-space:nowrap}.monthly-scroll th:first-child,.monthly-scroll td:first-child{position:sticky;left:0;z-index:1;text-align:left;width:118px;background:var(--surface-hover)}.monthly-scroll thead th{background:var(--surface-hover)}.monthly-scroll button{width:100%;border:1px solid transparent;border-radius:4px;padding:4px;background:transparent;font-size:12px;color:var(--text-secondary)}.monthly-scroll button:hover,.monthly-scroll button.active{background:var(--surface);border-color:var(--accent);color:var(--accent)}
+.filters-panel{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:0 0 18px;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:8px}.filter-field{display:flex;flex-direction:column;gap:7px;min-width:0}.filter-field>span{font-size:12px;font-weight:600;color:var(--text-secondary)}.filter-field input,.filter-field select{width:100%;height:38px;padding:0 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-size:13px;min-width:0}.filters-actions{display:flex;align-items:end}.filters-actions button{height:38px;padding:0 14px;border:1px solid var(--border);border-radius:6px;background:var(--surface);font-size:13px}.filters-actions button:hover{border-color:var(--accent)}
+@media(max-width:600px){.brand{min-width:0}.brandmark{flex:none}.brand>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.header-right{font-size:0;gap:0;flex:none}.header-right select{font-size:12px}.hero{padding:32px 0 25px;align-items:start;gap:12px}.hero h1{font-size:2.5rem}.hero-note{display:none}.archive-inline{display:inline}.overview{grid-template-columns:1fr}.summary-lead{min-height:125px;padding:19px 20px}.summary-total strong{font-size:2.4rem}.summary-distribution{border-left:1px solid var(--border);border-top:0;border-radius:0 0 12px 12px;padding:18px 20px}.distribution-bar{margin-top:14px}.distribution-legend{justify-content:space-between;gap:8px}.distribution-legend div{gap:5px}.workspace{margin-top:48px}}
+
   </style>
-<style>
-body{font-family:Inter,"Noto Sans SC",system-ui,sans-serif} #main-content{max-width:1440px;margin:auto;padding:50px 28px 90px}.hero{display:flex;justify-content:space-between;align-items:end;margin-bottom:30px}.hero h1{font-size:38px;margin:12px 0}.eyebrow{font-size:12px;letter-spacing:.13em;color:var(--accent);font-weight:700}.hero label{color:var(--text-secondary)}.card{margin-bottom:18px}.intro{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}.intro>div{display:flex;flex-direction:column;gap:3px}.intro span,.intro small{color:var(--text-secondary);font-size:13px}.intro strong{font-size:28px}.heading{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:20px}.heading h2{margin:9px 0;font-size:24px}.filters{display:flex;gap:8px;flex-wrap:wrap}input,select,button{background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:9px;font:inherit}button{cursor:pointer}.table-scroll{overflow:auto;border:1px solid var(--border);border-radius:8px}.candidate{max-height:520px}.details{max-height:480px}table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}th{position:sticky;top:0;background:var(--surface);z-index:1;color:var(--text-secondary)}tr.pick{cursor:pointer}tr.pick:hover,tr.active{background:var(--surface-hover)}.trend{display:grid;grid-template-columns:repeat(12,minmax(72px,1fr));gap:5px;overflow:auto}.trend button{display:flex;flex-direction:column;justify-content:end;height:160px;align-items:center;font-size:12px}.bar{background:var(--accent);width:26px;min-height:2px;border-radius:4px 4px 0 0}.trend button.active{outline:2px solid var(--accent)}.pager{display:flex;justify-content:flex-end;gap:14px;align-items:center;margin-top:15px} @media(max-width:760px){#main-content{padding:30px 14px}.hero,.heading{align-items:start;flex-direction:column}.intro{grid-template-columns:1fr 1fr}.hero h1{font-size:30px}}
-</style>
+  <script src="/vendor/chart.umd.min.js"></script>
+  <script>if (typeof Chart !== "undefined") Chart.defaults.animation = false;</script>
 </head>
 <body>
-  <a href="#main-content" class="skip-link" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:10000;padding:8px 16px;background:var(--accent);color:white;text-decoration:none;border-radius:4px;" onfocus="this.style.cssText='position:fixed;left:16px;top:16px;z-index:10000;padding:8px 16px;background:var(--accent);color:white;text-decoration:none;border-radius:4px;'" onblur="this.style.cssText='position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;'">Skip to content</a>
-  <main id="main-content">
-
   <!-- MENU -->
   <div class="viz-menu">
-    <button class="viz-menu-toggle" onclick="toggleMenu()" aria-label="Menu">
+    <button class="viz-menu-toggle" onclick="toggleMenu()" aria-label="页面菜单">
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/>
       </svg>
     </button>
     <div class="viz-menu-dropdown" id="vizMenuDropdown">
-      <button onclick="cycleTheme()"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button>
-      <button onclick="window.print()"><span>🖨️</span><span>Print / PDF</span></button>
+      <button onclick="cycleTheme()"><span id="themeIcon">◐</span><span id="themeLabel">切换主题</span></button>
+      <button onclick="downloadImage()"><span>↓</span><span>下载图片</span></button>
+      <button onclick="window.print()"><span>▤</span><span>打印 / PDF</span></button>
     </div>
   </div>
 
   <!-- SKIP TO CONTENT (accessibility) -->
-  <a href="#main-content" class="skip-to-content">Skip to content</a>
+  <a href="#main-content" class="skip-to-content">跳至主要内容</a>
 
-  <div role="main">
-    <header class="hero"><div><span class="eyebrow">采购 / 增长机会</span><h1>采购增量分析</h1><p class="text-secondary">从物料趋势到每一笔采购明细</p></div><label>业务月份 <select id="period"></select></label></header>
-    <section class="intro card"><div><span>当前范围</span><strong id="total">—</strong><small>个候选物料</small></div><div><span>优先谈判</span><strong id="priority">—</strong><small>个物料</small></div><div><span>归档日期</span><strong id="archiveDate">—</strong><small>含税金额 · 上游覆盖待核实</small></div></section>
-    <section class="card"><div class="heading"><div><span class="eyebrow">01 / 物料</span><h2>候选清单</h2><p class="text-secondary">选择物料，查看采购趋势和明细。</p></div><div class="filters"><input id="search" placeholder="搜索物料编码、名称或供应商" aria-label="搜索物料"><select id="level" aria-label="谈判优先级"><option value="">全部优先级</option><option>优先谈判</option><option>观察</option><option>不建议</option></select></div></div><div id="status" role="status" class="text-secondary"></div><div class="table-scroll candidate"><table><thead id="materialHead"></thead><tbody id="materials"></tbody></table></div><div class="pager"><button id="materialPrev">上一页</button><span id="materialPage"></span><button id="materialNext">下一页</button></div></section>
-    <section class="card" id="drill" hidden><div class="heading"><div><span class="eyebrow">02 / 趋势</span><h2 id="selected">物料月度趋势</h2><p class="text-secondary">点击月份，筛选当月明细。</p></div><button id="allMonths" type="button">全部月份</button></div><div id="trend" class="trend" role="group" aria-label="物料月度采购量"></div></section>
-    <section class="card" id="detailSection" hidden><div class="heading"><div><span class="eyebrow">03 / 明细</span><h2>采购入库明细</h2><p id="detailInfo" class="text-secondary"></p></div><div class="filters"><input id="supplier" placeholder="供应商名称（精确）"><input id="company" placeholder="公司名称（精确）"><button id="filterDetails">筛选</button></div></div><div class="table-scroll details"><table><thead id="detailHead"></thead><tbody id="detailBody"></tbody></table></div><div class="pager"><button id="prev">上一页</button><span id="pageLabel"></span><button id="next">下一页</button></div></section>
+  <main id="main-content" role="main">
+<header class="masthead animate">
+  <div class="brand"><span class="brandmark">S</span><span>供应链分析 <span class="brand-sep">/</span> 决策工作台</span></div>
+  <div class="header-right"><span class="live-dot"></span>本地数据 <span class="header-divider"></span><label for="period">业务月份</label><select id="period" aria-label="业务月份"></select></div>
+</header>
+<section class="hero animate delay-1" aria-labelledby="title">
+  <div><div class="kicker"><span class="kicker-line"></span> 采购决策 <span class="kicker-index">/ 增量分析</span></div><h1 id="title">采购增量分析<span class="hero-dot">.</span></h1><p>找到需求持续增长、值得进一步谈判的物料。</p></div>
+  <div class="hero-note"><span>本期数据归档于</span><strong id="archiveDate">—</strong><small>含税金额 · 近 12 个月</small></div>
+</section>
+<section class="overview animate delay-2" aria-label="候选概览">
+  <article class="summary-lead"><span class="summary-label">本期候选物料</span><div class="summary-total"><strong id="total">—</strong><span>个</span></div><span class="summary-caption">已通过范围、金额及近期采购条件</span><div class="summary-line" aria-hidden="true"></div></article>
+  <article class="summary-distribution"><div class="distribution-top"><div><span class="summary-label">候选优先级分布</span><p>按已确认的指标规则分档</p></div><span class="period-tag">含税口径</span></div><div class="distribution-bar" role="img" aria-label="候选物料按优先级分布"><span id="barPriority"></span><span id="barObserve"></span><span id="barAvoid"></span></div><div class="distribution-legend"><div><span class="legend-dot priority-dot"></span><span>优先谈判</span><strong id="priority">—</strong></div><div><span class="legend-dot observe-dot"></span><span>观察</span><strong id="observe">—</strong></div><div><span class="legend-dot avoid-dot"></span><span>不建议</span><strong id="avoid">—</strong></div></div><p class="coverage-note">数据覆盖仍待业务核实<span class="archive-inline"> · 归档于 <span id="archiveDateMobile">—</span></span></p></article>
+</section>
+<section class="workspace animate delay-3" aria-labelledby="materialsTitle">
+  <div class="section-top"><div><div class="section-kicker">01 <span></span> CANDIDATES</div><h2 id="materialsTitle">谈判候选</h2><p>选择物料，查看增长趋势及采购明细。</p></div><div class="section-side">按业务规则筛选 <span>↘</span></div></div>
+  <div class="toolbar"><label class="search-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="search" placeholder="搜索物料编码、名称或供应商" aria-label="搜索物料"></label><label class="select-wrap"><span>优先级</span><select id="level" aria-label="谈判优先级"><option value="">全部</option><option>优先谈判</option><option>观察</option><option>不建议</option></select></label></div>
+  <div class="filters-panel" aria-label="候选筛选条件">
+    <label class="filter-field"><span>核心供应商</span><input id="filterSupplier" type="search" placeholder="输入供应商名称"></label>
+    <label class="filter-field"><span>主单位</span><select id="filterUnit"><option value="">全部单位</option></select></label>
+    <label class="filter-field"><span>近12个月含税金额 ≥（万）</span><input id="amountMin" type="number" step="any" placeholder="不限"></label>
+    <label class="filter-field"><span>近12个月含税金额 ≤（万）</span><input id="amountMax" type="number" step="any" placeholder="不限"></label>
+    <label class="filter-field"><span>采购量趋势指数 ≥（%）</span><input id="growthMin" type="number" step="any" placeholder="不限"></label>
+    <label class="filter-field"><span>单一供应商占比 ≥（%）</span><input id="shareMin" type="number" step="any" placeholder="不限"></label>
+    <label class="filter-field"><span>备货嫌疑</span><select id="stockFilter"><option value="">全部</option><option value="true">是</option><option value="false">否</option></select></label>
+    <div class="filters-actions"><button id="clearFilters" type="button">清空筛选</button></div>
   </div>
-
-  <!-- EXAMPLE: Exclusive accordion (only one open at a time, no JS needed) -->
-  <!--
-  <details name="faq" open>
-    <summary>Section 1</summary>
-    <div class="section-body"><p>Content</p></div>
-  </details>
-  <details name="faq">
-    <summary>Section 2</summary>
-    <div class="section-body"><p>Content</p></div>
-  </details>
-  -->
-
-  <!-- EXAMPLE: Popover (zero-JS tooltip/info panel) -->
-  <!--
-  <button popovertarget="info-panel">Details</button>
-  <div id="info-panel" popover>
-    <h3>More Information</h3>
-    <p>Content shown on click, no JS needed.</p>
-  </div>
-  -->
+  <div class="table-meta"><span id="status" role="status">正在读取…</span><span>左右滚动查看全部汇总指标 · 选择物料查看月度和明细</span></div>
+  <div class="table-scroll candidate"><table><thead id="materialHead"></thead><tbody id="materials"></tbody></table></div>
+  <div class="pager"><span id="materialPage"></span><div><button id="materialPrev" type="button">上一页</button><button id="materialNext" type="button">下一页 <span aria-hidden="true">→</span></button></div></div>
+</section>
+<section class="drill-section" id="drill" hidden aria-labelledby="selected">
+  <div class="section-top"><div><div class="section-kicker">02 <span></span> MONTHLY TREND</div><h2 id="selected">物料月度趋势</h2><p>选择月份，查看当月采购明细。</p></div><button class="outline-button" id="allMonths" type="button">查看全部月份</button></div>
+  <div class="trend-panel"><div class="chart-head"><div><span class="chart-title">月采购净量</span><span class="chart-subtitle">数量按原始单位统计，退货冲减</span></div><span class="chart-hint">点击柱形或月份下钻</span></div><div class="chart-container" role="img" aria-label="所选物料近十二个月采购净量趋势"><canvas id="trendChart" role="img" aria-label="所选物料月采购净量柱状图"></canvas></div><div class="monthly-scroll"><table id="monthlyTable" aria-label="各月采购量与含税金额"></table></div></div>
+</section>
+<section class="detail-section" id="detailSection" hidden aria-labelledby="detailTitle">
+  <div class="section-top"><div><div class="section-kicker">03 <span></span> PURCHASE DETAILS</div><h2 id="detailTitle">采购入库明细</h2><p id="detailInfo">—</p></div></div>
+  <div class="detail-filters"><input id="supplier" placeholder="供应商名称（精确）" aria-label="供应商名称（精确）"><input id="company" placeholder="公司名称（精确）" aria-label="公司名称（精确）"><button id="filterDetails" type="button">筛选明细</button></div>
+  <div class="table-scroll details"><table><thead id="detailHead"></thead><tbody id="detailBody"></tbody></table></div>
+  <div class="pager"><span id="pageLabel"></span><div><button id="prev" type="button">上一页</button><button id="next" type="button">下一页 <span aria-hidden="true">→</span></button></div></div>
+</section>
+<footer class="page-footer"><span>供应链分析 / 采购增量</span><span>金额单位：万元 · 含税　 /　 由本地数据生成</span></footer>
 
   </main>
+
   <script>
     // === Menu ===
     function toggleMenu() { 
@@ -231,8 +272,8 @@ body{font-family:Inter,"Noto Sans SC",system-ui,sans-serif} #main-content{max-wi
     var currentTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
     function applyTheme(t) {
       document.documentElement.className = 'theme-' + t;
-      document.getElementById('themeIcon').textContent = t === 'dark' ? '🌙' : '☀️';
-      document.getElementById('themeLabel').textContent = t === 'dark' ? 'Dark' : 'Light';
+      document.getElementById('themeIcon').textContent = t === 'dark' ? '◐' : '◑';
+      document.getElementById('themeLabel').textContent = t === 'dark' ? '深色模式' : '浅色模式';
       localStorage.setItem('viz-theme', t);
       currentTheme = t;
       if (typeof onThemeChange === 'function') onThemeChange();
@@ -294,26 +335,93 @@ body{font-family:Inter,"Noto Sans SC",system-ui,sans-serif} #main-content{max-wi
     // function onThemeChange() { chartsBuilt = false; buildCharts(); }
     // window.addEventListener('load', buildCharts);
 
-    var state = {month:'', material:'', purchaseMonth:'', rows:[], columns:[], materialPage:1, page:1, total:0};
-    var el = function(id){return document.getElementById(id)};
-    var value = function(v){ if(v === null || v === undefined) return '—'; if(Array.isArray(v)) return v.map(value).join('、'); if(typeof v === 'number') return String(v); return String(v) };
-    function parseTable(text){
-      var rows=[], row=[], field='', quoted=false;
-      for(var i=0;i<text.length;i++){var ch=text[i];if(quoted){if(ch==='"'){if(text[i+1]==='"'){field+='"';i++}else quoted=false}else field+=ch}
-        else if(ch==='"')quoted=true;else if(ch===','){row.push(field);field=''}else if(ch==='\n'){row.push(field);rows.push(row);row=[];field=''}else if(ch!=='\r')field+=ch}
-      if(field!==''||row.length){row.push(field);rows.push(row)}
-      var columns=rows.shift()||[], numeric=['最近12个月含税金额万','采购量趋势指数','月采购量','月含税金额万'];
-      return {columns:columns,rows:rows.map(function(values){var obj={};columns.forEach(function(name,i){var v=values[i]||'';obj[name]=numeric.includes(name)?(v===''?null:Number(v)):v});return obj})};
-    }
-    var api = async function(path, params){var q=new URLSearchParams(params||{});var res=await fetch(path+'?'+q);var text=await res.text();if(!res.ok) throw Error(text||'读取失败');var data=parseTable(text);if(path==='/api/periods')return data.rows.map(function(r){return r.month});if(path==='/api/report')return {data:data,meta:{'归档日期':res.headers.get('X-Archive-Date')}};if(path==='/api/details')return {data:data,total:Number(res.headers.get('X-Total-Count')),page_size:Number(res.headers.get('X-Page-Size'))};return data};
-    var td = function(tr, v){var c=document.createElement('td');c.textContent=value(v);tr.appendChild(c)};
-    function showError(err){el('status').textContent=err.message||String(err)}
-    function renderMaterials(){var body=el('materials');body.replaceChildren();var q=el('search').value.trim().toLowerCase(),level=el('level').value;var rows=state.rows.filter(function(r){return (!level||r['谈判优先级']===level) && [r['物料编码'],r['物料名称'],r['核心供应商名称']].some(function(x){return value(x).toLowerCase().includes(q)})});var pageSize=50,maxPage=Math.max(1,Math.ceil(rows.length/pageSize));state.materialPage=Math.min(state.materialPage,maxPage);el('status').textContent='共 '+rows.length+' 个物料；可左右滚动查看全部字段';el('materialPage').textContent='第 '+state.materialPage+' / '+maxPage+' 页';el('materialPrev').disabled=state.materialPage<=1;el('materialNext').disabled=state.materialPage>=maxPage;var head=el('materialHead');head.replaceChildren();var header=document.createElement('tr');state.columns.forEach(function(name){var th=document.createElement('th');th.textContent=name;header.appendChild(th)});head.appendChild(header);rows.slice((state.materialPage-1)*pageSize,state.materialPage*pageSize).forEach(function(r){var tr=document.createElement('tr');tr.className='pick'+(String(r['物料编码'])===state.material?' active':'');state.columns.forEach(function(name){var v=r[name];if(name==='采购量趋势指数'&&v!=null)v=(v*100).toFixed(1)+'%';if(name==='最近12个月含税金额万'&&v!=null)v=Number(v).toLocaleString('zh-CN',{maximumFractionDigits:2});td(tr,v)});tr.addEventListener('click',function(){selectMaterial(r).catch(showError)});body.appendChild(tr)})}
-    async function loadReport(){state.month=el('period').value;state.material='';el('drill').hidden=true;el('detailSection').hidden=true;var res=await api('/api/report',{month:state.month});state.rows=res.data.rows;var first=['物料编码','物料名称','谈判优先级','核心供应商名称','最近12个月含税金额万','采购量趋势指数'];state.columns=first.concat(res.data.columns.filter(function(c){return !first.includes(c)}));state.materialPage=1;el('total').textContent=state.rows.length.toLocaleString();el('priority').textContent=state.rows.filter(function(r){return r['谈判优先级']==='优先谈判'}).length.toLocaleString();el('archiveDate').textContent=res.meta['归档日期'];renderMaterials()}
-    async function selectMaterial(r){state.material=String(r['物料编码']);state.purchaseMonth='';state.page=1;el('supplier').value='';el('company').value='';el('drill').hidden=false;el('detailSection').hidden=false;el('selected').textContent=value(r['物料名称'])+' · '+state.material;renderMaterials();var res=await api('/api/monthly',{month:state.month,material:state.material});var trend=el('trend');trend.replaceChildren();var max=Math.max(1,...res.rows.map(function(x){return Math.abs(x['月采购量'])}));res.rows.forEach(function(row){var b=document.createElement('button'),bar=document.createElement('span'),number=document.createElement('span'),date=document.createElement('span');b.type='button';b.setAttribute('aria-label',row['采购月']+' 采购净量 '+value(row['月采购量']));bar.className='bar';bar.style.height=Math.max(2,Math.abs(row['月采购量'])/max*80)+'px';if(row['月采购量']<0)bar.style.background='var(--negative)';number.textContent=value(row['月采购量']);date.textContent=row['采购月'];b.append(number,bar,date);b.addEventListener('click',function(){state.purchaseMonth=row['采购月'];state.page=1;trend.querySelectorAll('button').forEach(function(x){x.classList.remove('active')});b.classList.add('active');loadDetails().catch(showError)});trend.appendChild(b)});await loadDetails()}
-    async function loadDetails(){var res=await api('/api/details',{month:state.month,material:state.material,purchase_month:state.purchaseMonth,supplier:el('supplier').value,company:el('company').value,page:state.page});state.total=res.total;el('detailInfo').textContent=(state.purchaseMonth||'全部月份')+' · '+res.total.toLocaleString()+' 条记录';var head=el('detailHead');head.replaceChildren();var tr=document.createElement('tr');res.data.columns.forEach(function(name){var th=document.createElement('th');th.textContent=name;tr.appendChild(th)});head.appendChild(tr);var body=el('detailBody');body.replaceChildren();res.data.rows.forEach(function(row){var line=document.createElement('tr');res.data.columns.forEach(function(name){td(line,row[name])});body.appendChild(line)});el('pageLabel').textContent='第 '+state.page+' 页';el('prev').disabled=state.page<=1;el('next').disabled=state.page*res.page_size>=state.total}
-    el('search').addEventListener('input',function(){state.materialPage=1;renderMaterials()});el('level').addEventListener('change',function(){state.materialPage=1;renderMaterials()});el('materialPrev').addEventListener('click',function(){state.materialPage--;renderMaterials()});el('materialNext').addEventListener('click',function(){state.materialPage++;renderMaterials()});el('period').addEventListener('change',function(){loadReport().catch(showError)});el('filterDetails').addEventListener('click',function(){state.page=1;loadDetails().catch(showError)});el('prev').addEventListener('click',function(){state.page--;loadDetails().catch(showError)});el('next').addEventListener('click',function(){state.page++;loadDetails().catch(showError)});el('allMonths').addEventListener('click',function(){state.purchaseMonth='';state.page=1;el('trend').querySelectorAll('button').forEach(function(x){x.classList.remove('active')});loadDetails().catch(showError)});
-    (async function(){try{var periods=await api('/api/periods');periods.forEach(function(x){var opt=document.createElement('option');opt.value=opt.textContent=x;el('period').appendChild(opt)});if(periods.length) await loadReport();else el('status').textContent='暂无已归档结果'}catch(err){showError(err)}})();
+var state = {month:'', material:'', purchaseMonth:'', rows:[], columns:[], materialPage:1, page:1, total:0, monthly:[], request:0};
+var el = function(id){return document.getElementById(id)};
+var value = function(v){return v === null || v === undefined || v === '' ? '—' : String(v)};
+function parseTable(text){
+  var rows=[], row=[], field='', quoted=false;
+  for(var i=0;i<text.length;i++){var ch=text[i];if(quoted){if(ch==='"'){if(text[i+1]==='"'){field+='"';i++}else quoted=false}else field+=ch}
+    else if(ch==='"')quoted=true;else if(ch===','){row.push(field);field=''}else if(ch==='\n'){row.push(field);rows.push(row);row=[];field=''}else if(ch!=='\r')field+=ch}
+  if(field!==''||row.length){row.push(field);rows.push(row)}
+  var columns=rows.shift()||[], numeric=['最近12个月采购净量','最近12个月含税金额万','采购量趋势指数','月采购量','月含税金额万'];
+  return {columns:columns,rows:rows.map(function(values){var obj={};columns.forEach(function(name,i){var v=values[i]||'';obj[name]=numeric.includes(name)?(v===''?null:Number(v)):v});return obj})};
+}
+async function api(path,params){
+  var res=await fetch(path+'?'+new URLSearchParams(params||{}));var text=await res.text();if(!res.ok)throw Error(text||'读取失败');var data=parseTable(text);
+  if(path==='/api/periods')return data.rows.map(function(r){return r.month});
+  if(path==='/api/report')return {data:data,archiveDate:res.headers.get('X-Archive-Date')};
+  if(path==='/api/details')return {data:data,total:Number(res.headers.get('X-Total-Count')),pageSize:Number(res.headers.get('X-Page-Size'))};
+  return data;
+}
+function addCell(tr,v,name){var c=document.createElement('td');if(name==='谈判优先级'){var tag=document.createElement('span');tag.className='tag';tag.textContent=value(v);c.appendChild(tag)}else{c.textContent=value(v);c.title=value(v)}tr.appendChild(c)}
+function formatField(name,v){
+  if(v===null||v===undefined||v==='')return v;
+  if(name==='备货嫌疑')return String(v).toLowerCase()==='true'?'是':String(v).toLowerCase()==='false'?'否':v;
+  var ratios=['采购量趋势指数','最近1个月环比增长率','单一供应商供货占比','半年同比','最近3个月采购量占比','免费数量占比'];
+  var amounts=['最近12个月采购净量','最近12个月含税金额万','核心供应商含税金额万','最近3个月平均采购量','前3个月平均采购量'];
+  if((ratios.includes(name)||amounts.includes(name))&&Number.isFinite(Number(v))){var n=Number(v);return ratios.includes(name)?(n*100).toLocaleString('zh-CN',{maximumFractionDigits:1})+'%':n.toLocaleString('zh-CN',{maximumFractionDigits:2})}
+  if(name==='出入库日期'&&/^\d{4}-\d{2}-\d{2}T00:00:00$/.test(v))return v.slice(0,10);
+  return v;
+}
+function drawHead(id,columns){var head=el(id);head.replaceChildren();var tr=document.createElement('tr');columns.forEach(function(name){var th=document.createElement('th');th.scope='col';th.textContent=name;tr.appendChild(th)});head.appendChild(tr)}
+function showError(err){el('status').textContent='读取失败：'+(err.message||String(err))}
+function meetsThreshold(raw, input, direction, scale){
+  if(input==='')return true;
+  if(raw===null||raw===undefined||raw==='')return false;
+  var amount=Number(raw),threshold=Number(input)/(scale||1);
+  return Number.isFinite(amount)&&Number.isFinite(threshold)&&(direction==='min'?amount>=threshold:amount<=threshold);
+}
+function renderMaterials(){
+  var q=el('search').value.trim().toLowerCase(),level=el('level').value,body=el('materials');
+  var supplier=el('filterSupplier').value.trim().toLowerCase(),unit=el('filterUnit').value,stock=el('stockFilter').value;
+  var amountMin=el('amountMin').value,amountMax=el('amountMax').value,growthMin=el('growthMin').value,shareMin=el('shareMin').value;
+  var invalidRange=amountMin!==''&&amountMax!==''&&Number(amountMin)>Number(amountMax);
+  var rows=state.rows.filter(function(r){return !invalidRange&&(!level||r['谈判优先级']===level)&&[r['物料编码'],r['物料名称'],r['核心供应商名称']].some(function(x){return value(x).toLowerCase().includes(q)})
+    &&(!supplier||value(r['核心供应商名称']).toLowerCase().includes(supplier))&&(!unit||r['主单位']===unit)
+    &&(!stock||String(r['备货嫌疑']).toLowerCase()===stock)
+    &&meetsThreshold(r['最近12个月含税金额万'],amountMin,'min')&&meetsThreshold(r['最近12个月含税金额万'],amountMax,'max')
+    &&meetsThreshold(r['采购量趋势指数'],growthMin,'min',100)&&meetsThreshold(r['单一供应商供货占比'],shareMin,'min',100)});
+  var size=50,max=Math.max(1,Math.ceil(rows.length/size));state.materialPage=Math.min(state.materialPage,max);
+  el('status').textContent=invalidRange?'金额下限不能大于上限':'筛选结果 '+rows.length.toLocaleString()+' / '+state.rows.length.toLocaleString()+' 个物料';el('materialPage').textContent='第 '+state.materialPage+' / '+max+' 页';el('materialPrev').disabled=state.materialPage<=1;el('materialNext').disabled=state.materialPage>=max;
+  if(state.material&&!rows.some(function(row){return String(row['物料编码'])===state.material})){state.material='';state.request++;el('drill').hidden=true;el('detailSection').hidden=true}
+  drawHead('materialHead',state.columns);body.replaceChildren();
+  rows.slice((state.materialPage-1)*size,state.materialPage*size).forEach(function(r){var tr=document.createElement('tr');tr.className='pick'+(String(r['物料编码'])===state.material?' active':'');tr.tabIndex=0;tr.setAttribute('aria-label','查看物料 '+value(r['物料名称'])+' '+value(r['物料编码']));state.columns.forEach(function(name){addCell(tr,formatField(name,r[name]),name)});tr.addEventListener('click',function(){selectMaterial(r).catch(showError)});tr.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();selectMaterial(r).catch(showError)}});body.appendChild(tr)})
+}
+async function loadReport(){
+  var month=el('period').value;state.month=month;state.material='';state.request++;el('drill').hidden=true;el('detailSection').hidden=true;el('status').textContent='正在读取…';var res=await api('/api/report',{month:month});if(state.month!==month)return;
+  state.rows=res.data.rows;state.columns=res.data.columns;state.materialPage=1;
+  var units=Array.from(new Set(state.rows.map(function(row){return row['主单位']}).filter(Boolean))).sort(),previousUnit=el('filterUnit').value;
+  el('filterUnit').replaceChildren(new Option('全部单位',''));units.forEach(function(unit){el('filterUnit').appendChild(new Option(unit,unit))});if(units.includes(previousUnit))el('filterUnit').value=previousUnit;
+  el('total').textContent=state.rows.length.toLocaleString();[['priority','barPriority','优先谈判'],['observe','barObserve','观察'],['avoid','barAvoid','不建议']].forEach(function(item){var count=state.rows.filter(function(r){return r['谈判优先级']===item[2]}).length;el(item[0]).textContent=count.toLocaleString();el(item[1]).style.width=(state.rows.length?count/state.rows.length*100:0)+'%'});el('archiveDate').textContent=el('archiveDateMobile').textContent=value(res.archiveDate);renderMaterials();
+}
+var ChartManager={charts:new Map(),safeInit:function(id,config){if(typeof Chart==='undefined'){console.error('Chart.js not loaded');return null}var canvas=el(id);if(!canvas)return null;try{if(this.charts.has(id))this.charts.get(id).destroy();var chart=new Chart(canvas,config);this.charts.set(id,chart);return chart}catch(err){console.error('Chart initialization failed:',err);return null}},destroyAll:function(){this.charts.forEach(function(chart){chart.destroy()});this.charts.clear()}};
+function renderTrend(){
+  if(typeof Chart==='undefined'){console.error('Chart.js not loaded');return}if(!state.monthly.length)return;
+  var styles=getComputedStyle(document.documentElement),accent=styles.getPropertyValue('--accent').trim(),negative=styles.getPropertyValue('--negative').trim(),text=styles.getPropertyValue('--text-secondary').trim(),border=styles.getPropertyValue('--border').trim();
+  ChartManager.safeInit('trendChart',{type:'bar',data:{labels:state.monthly.map(function(x){return x['采购月']}),datasets:[{label:'月采购净量',data:state.monthly.map(function(x){return x['月采购量']}),backgroundColor:state.monthly.map(function(x){return x['月采购量']<0?negative:accent}),borderRadius:4,maxBarThickness:38}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{enabled:true,callbacks:{label:function(ctx){return '采购净量：'+Number(ctx.raw).toLocaleString('zh-CN',{maximumFractionDigits:2})}}}},scales:{x:{ticks:{color:text,maxRotation:0,font:{size:11}},grid:{display:false},border:{display:false}},y:{ticks:{color:text,font:{size:11}},grid:{color:border},border:{display:false}}},onClick:function(event,items){if(items.length)chooseMonth(state.monthly[items[0].index]['采购月'])}}});
+  var table=el('monthlyTable');table.replaceChildren();var head=document.createElement('thead'),header=document.createElement('tr'),body=document.createElement('tbody');
+  var first=document.createElement('th');first.scope='col';first.textContent='采购月份';header.appendChild(first);
+  var quantity=document.createElement('tr'),amount=document.createElement('tr');
+  [['月采购净量',quantity],['月含税金额（万）',amount]].forEach(function(item){var th=document.createElement('th');th.scope='row';th.textContent=item[0];item[1].appendChild(th)});
+  state.monthly.forEach(function(row){var th=document.createElement('th'),b=document.createElement('button');b.type='button';b.textContent=row['采购月'];b.setAttribute('aria-label',row['采购月']+' 采购净量 '+value(row['月采购量']));if(state.purchaseMonth===row['采购月'])b.classList.add('active');b.addEventListener('click',function(){chooseMonth(row['采购月'])});th.appendChild(b);header.appendChild(th);['月采购量','月含税金额万'].forEach(function(key,index){var td=document.createElement('td'),number=row[key];td.textContent=number==null?'—':Number(number).toLocaleString('zh-CN',{maximumFractionDigits:4});(index===0?quantity:amount).appendChild(td)})});
+  head.appendChild(header);body.append(quantity,amount);table.append(head,body);
+}
+function onThemeChange(){if(typeof state!=='undefined'&&state.monthly.length)renderTrend()}
+function chooseMonth(month){state.purchaseMonth=month;state.page=1;renderTrend();loadDetails().catch(showError)}
+async function selectMaterial(row){
+  state.material=String(row['物料编码']);state.purchaseMonth='';state.page=1;state.monthly=[];var token=++state.request;el('supplier').value='';el('company').value='';el('drill').hidden=false;el('detailSection').hidden=false;el('selected').textContent=value(row['物料名称'])+' · '+state.material;el('detailInfo').textContent='正在读取明细…';renderMaterials();
+  var result=await api('/api/monthly',{month:state.month,material:state.material});if(token!==state.request)return;state.monthly=result.rows;renderTrend();await loadDetails();
+}
+async function loadDetails(){
+  var token=state.request, material=state.material,month=state.purchaseMonth,page=state.page;
+  var res=await api('/api/details',{month:state.month,material:material,purchase_month:month,supplier:el('supplier').value,company:el('company').value,page:page});if(token!==state.request||material!==state.material||month!==state.purchaseMonth||page!==state.page)return;
+  state.total=res.total;el('detailInfo').textContent=(month||'全部月份')+' · '+res.total.toLocaleString()+' 条记录';drawHead('detailHead',res.data.columns);var body=el('detailBody');body.replaceChildren();res.data.rows.forEach(function(row){var tr=document.createElement('tr');res.data.columns.forEach(function(name){addCell(tr,formatField(name,row[name]),name)});body.appendChild(tr)});el('pageLabel').textContent='第 '+page+' / '+Math.max(1,Math.ceil(res.total/res.pageSize))+' 页';el('prev').disabled=page<=1;el('next').disabled=page*res.pageSize>=res.total;
+}
+el('search').addEventListener('input',function(){state.materialPage=1;renderMaterials()});el('level').addEventListener('change',function(){state.materialPage=1;renderMaterials()});el('materialPrev').addEventListener('click',function(){state.materialPage--;renderMaterials()});el('materialNext').addEventListener('click',function(){state.materialPage++;renderMaterials()});el('period').addEventListener('change',function(){loadReport().catch(showError)});el('filterDetails').addEventListener('click',function(){state.page=1;loadDetails().catch(showError)});el('prev').addEventListener('click',function(){state.page--;loadDetails().catch(showError)});el('next').addEventListener('click',function(){state.page++;loadDetails().catch(showError)});el('allMonths').addEventListener('click',function(){chooseMonth('')});
+var filterIds=['filterSupplier','filterUnit','amountMin','amountMax','growthMin','shareMin','stockFilter'];
+filterIds.forEach(function(id){el(id).addEventListener('input',function(){state.materialPage=1;renderMaterials()});el(id).addEventListener('change',function(){state.materialPage=1;renderMaterials()})});
+el('clearFilters').addEventListener('click',function(){['search','level'].concat(filterIds).forEach(function(id){el(id).value=''});state.materialPage=1;renderMaterials()});
+(async function(){try{var periods=await api('/api/periods');periods.forEach(function(x){var o=document.createElement('option');o.value=o.textContent=x;el('period').appendChild(o)});if(periods.length)await loadReport();else el('status').textContent='暂无已归档结果'}catch(err){showError(err)}})();
 
   </script>
 </body>

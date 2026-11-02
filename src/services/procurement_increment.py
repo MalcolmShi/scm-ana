@@ -21,7 +21,11 @@ def available_periods() -> list[str]:
 
 def read_report(month: str):
     end = str(_period(month).end_time.date())
-    return read_outputs_meta(SCENE, end)
+    report, meta = read_outputs_meta(SCENE, end)
+    first = ['物料编码', '物料名称', '谈判优先级', '规格', '主单位', '最近12个月采购净量',
+             '最近12个月含税金额万', '核心供应商名称', '采购量趋势指数']
+    columns = first + [column for column in report.columns if column not in first]
+    return report.loc[:, columns], meta
 
 
 def read_monthly(month: str, material: str):

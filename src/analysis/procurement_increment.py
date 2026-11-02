@@ -80,11 +80,11 @@ def _supplier_metrics(df: pd.DataFrame):
 
 
 def _build_report(df, qty, metrics, suppliers, end):
-    """应用近期采购门槛、确定分档并保留来源字段。"""
-    attributes = [c for c in df if c != "物料编码"]
+    """按物料生成汇总报表，逐笔字段通过 processed 明细查看。"""
+    attributes = ["物料名称", "规格", "主单位"]
     def values(series):
-        unique = list(pd.unique(series))
-        return unique[0] if len(unique) == 1 else unique
+        unique = list(pd.unique(series.dropna()))
+        return unique[0] if len(unique) == 1 else "多个" + series.name if unique else None
     attrs = df.groupby("物料编码", as_index=False, dropna=False)[attributes].agg(values)
     report = attrs.merge(metrics.reset_index(), on="物料编码", validate="one_to_one").merge(suppliers, on="物料编码", validate="one_to_one")
     rejected = qty.iloc[:, -3:].le(0).any(axis=1)
@@ -96,21 +96,15 @@ def _build_report(df, qty, metrics, suppliers, end):
     free = df.loc[df["采购金额(万)"].eq(0)].groupby("物料编码")["数量"].sum()
     total_qty = df.groupby("物料编码")["数量"].sum()
     report["免费数量占比"] = report["物料编码"].map(free.reindex(total_qty.index, fill_value=0) / total_qty.where(total_qty != 0))
-    report["主单位多值"] = report["物料编码"].map(df.groupby("物料编码")["主单位"].nunique().gt(1))
+    multi_unit = report["物料编码"].map(df.groupby("物料编码")["主单位"].nunique().gt(1))
+    report["最近12个月采购净量"] = report["物料编码"].map(total_qty).mask(multi_unit)
     report["业务结束月"] = str(end)
     order = {"优先谈判": 0, "观察": 1, "不建议": 2}
     report = (report.assign(_顺序=report["谈判优先级"].map(order))
               .sort_values(["_顺序", "采购量趋势指数", "最近12个月含税金额万"], ascending=[True, False, False], na_position="last")
               .drop(columns="_顺序").reset_index(drop=True))
-    priority = ["业务结束月", "物料编码", "物料名称", "规格", "主单位", "谈判优先级", "核心供应商名称", "最近12个月含税金额万", "采购量趋势指数", "最近1个月环比增长率", "连续增长月数", "单一供应商供货占比", "最近3个月平均采购量", "前3个月平均采购量", "半年同比", "逐季抬升次数", "最近3个月采购量占比", "备货嫌疑", "免费数量占比", "主单位多值"]
-    report = report[priority + [c for c in report if c not in priority]]
-    # 来源属性每列固定为列表，跨月份也不会因单值/多值变化而改变 schema。
-    multi_columns = list(attributes)
-    for col in attributes:
-        report[col] = pd.Series([v if isinstance(v, list) else [v] for v in report[col]], index=report.index, dtype=object)
-        if col == "采购月":
-            report[col] = pd.Series([[str(x) for x in v] for v in report[col]], index=report.index, dtype=object)
-    return report, int(rejected.sum()), multi_columns
+    columns = ["业务结束月", "物料编码", "物料名称", "规格", "主单位", "谈判优先级", "核心供应商名称", "最近12个月采购净量", "最近12个月含税金额万", "采购量趋势指数", "最近1个月环比增长率", "连续增长月数", "单一供应商供货占比", "最近3个月平均采购量", "前3个月平均采购量", "半年同比", "逐季抬升次数", "最近3个月采购量占比", "备货嫌疑", "免费数量占比", "核心供应商含税金额万"]
+    return report[columns], int(rejected.sum())
 
 
 
@@ -120,9 +114,9 @@ def analyze(frame: pd.DataFrame, end_month: str) -> tuple[dict[str, pd.DataFrame
     monthly, qty = _monthly_totals(df, months)
     metrics = _growth_metrics(qty)
     suppliers = _supplier_metrics(df)
-    report, excluded, list_columns = _build_report(df, qty, metrics, suppliers, end)
+    report, excluded = _build_report(df, qty, metrics, suppliers, end)
     monthly["采购月"] = monthly["采购月"].astype(str)
     return {"detail": report, "monthly": monthly}, {
         "input_rows": len(frame), "filtered_rows": len(df), "filtered_materials": len(qty),
-        "excluded_materials": excluded, "list_columns": list_columns,
+        "excluded_materials": excluded,
     }

@@ -21,8 +21,24 @@ class DrilldownTests(unittest.TestCase):
         storage.replace_partition('processed','procurement_inbound',self.day,self.frame)
         parts=storage.partitions('processed','procurement_inbound','2025-10-01','2026-09-30')
         meta={'inputs':[{'layer':'processed','dataset':'procurement_inbound','start':'2025-10-01','end':'2026-09-30','partitions':parts}]}
-        tables={'detail':pd.DataFrame({'物料编码':['M1']}),'monthly':pd.DataFrame({'物料编码':['M1'],'采购月':['2026-09'],'月采购量':[5.],'月含税金额万':[3.]})}
+        tables={'detail':pd.DataFrame({'物料编码':['M1'], '物料名称':['试剂'], '规格':['规格'], '主单位':['盒'],
+                    '谈判优先级':['观察'], '核心供应商名称':['乙'], '最近12个月采购净量':[5.],
+                    '最近12个月含税金额万':[3.], '采购量趋势指数':[0.2],
+                    '最近1个月环比增长率':[0.1], '连续增长月数':[2], '单一供应商供货占比':[0.6],
+                    '最近3个月采购量占比':[0.5], '半年同比':[0.4], '逐季抬升次数':[2]}),
+                'monthly':pd.DataFrame({'物料编码':['M1'],'采购月':['2026-09'],'月采购量':[5.],'月含税金额万':[3.]})}
         storage.replace_outputs('procurement_increment','2026-09-30',tables,meta)
+
+    def test_report_uses_summarized_quantity_not_detail_values(self):
+        report, _ = service.read_report('2026-09')
+        self.assertEqual(report.iloc[0]['最近12个月采购净量'], 5.)
+        self.assertEqual(report.iloc[0]['主单位'], '盒')
+        self.assertEqual(list(report.columns[:3]), ['物料编码', '物料名称', '谈判优先级'])
+        for indicator in ('最近1个月环比增长率', '连续增长月数', '单一供应商供货占比',
+                          '最近3个月采购量占比', '半年同比', '逐季抬升次数'):
+            self.assertIn(indicator, report.columns)
+        for detail_column in ('采购月', '出入库日期', '数量', '采购金额(万)', '主单位多值'):
+            self.assertNotIn(detail_column, report.columns)
 
     def test_filtered_details_reconcile_with_monthly_and_paginate(self):
         monthly=service.read_monthly('2026-09','M1')
