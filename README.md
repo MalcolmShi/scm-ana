@@ -45,6 +45,10 @@ uv run python scripts/build_processed.py
 uv run python scripts/archive_procurement_increment.py
 uv run python scripts/archive_procurement_increment.py 2026-09
 
+# 采购降本模拟：先将 notebook 生成的快照及模拟输入导入独立 DuckDB
+# 重新导入会覆盖演示库中的临时修改
+uv run python scripts/import_savings_demo.py
+
 # 本机看板：采购增量 http://127.0.0.1:8765
 # 采购降本模拟演示 http://127.0.0.1:8765/savings
 uv run python scripts/run_dashboard.py
@@ -59,7 +63,7 @@ uv run python scripts/export_dispatch_tasks.py
 uv run python scripts/export_dispatch_tasks.py 2026-09 --priority all
 ```
 
-采购降本页面展示的是虚构数据，与采购增量共用本地服务。其数据由[模拟演示 notebook](notebooks/采购降本统计/采购降本模拟演示.ipynb) 的最后一节生成快照；修改模拟输入后需完整运行 notebook 更新快照，不写入正式业务数据库。
+采购降本页面展示虚构数据，与采购增量共用本地服务。页面从独立的 `data/procurement_savings_demo.duckdb` 读取，数据库中 `demo_savings` 下保存模拟输入和核算结果；更新结果后点击页面的“刷新数据”即可重新读取。修改原始模拟输入并不会自动重新核算：须完整运行[模拟演示 notebook](notebooks/采购降本统计/采购降本模拟演示.ipynb) 生成快照，再运行导入命令；重新导入会覆盖演示库中的临时修改。演示库不写入正式业务数据库。
 
 一个日期参数表示整年、整月或当天；两个参数表示闭区间。已建立的数据集在指定窗口无记录时返回保留字段的空 DataFrame；数据库或数据集未建立、processed 已知缺档或过期时明确报错：
 
@@ -80,4 +84,4 @@ monthly = read_outputs('procurement_increment', '2026-09-30', 'monthly')
 - [采购增量指标验证](notebooks/采购增量分析/采购增量分析.ipynb)
 - [采购入库清洗确认](notebooks/数据清洗/采购入库清洗确认.ipynb)
 - [数据分析 skill](.agents/skills/data-ana/SKILL.md)
-- [钉钉派发 skill](.agents/skills/dingtalk-dispatch/SKILL.md)：outputs 导出派发任务，写入钉钉多维表「采购增量识别」；固定表见 `config/dingtalk_target.json`，负责人规则见 `src/dispatch_rules.py`（按五级分类，未命中兜底施敏超）；表内已启用「新增记录通知施敏超」自动化
+- [采购业务多维表同步 skill](.agents/skills/aitable-sync/SKILL.md)：分别处理采购增量任务派发和采购降本填报、复核；降本目标表及同步流程尚待确认与实现。

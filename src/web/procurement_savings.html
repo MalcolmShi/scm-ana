@@ -182,9 +182,11 @@ html.theme-dark{--bg:#101b17;--surface:#192823;--surface-hover:#23382e;--border:
 #main-content{max-width:1440px}.hero{padding:36px 0 22px}.hero h1{font-size:clamp(2.5rem,3.6vw,3.25rem);margin:10px 0 8px}.hero-side{display:flex;align-items:center;gap:10px}.hero-side p{margin:0}.demo-badge{padding:5px 9px}
 .view-tabs{display:flex;gap:27px;border-bottom:1px solid var(--border);margin-bottom:24px}.view-tabs button{position:relative;padding:11px 2px 13px;border:0;background:transparent;color:var(--text-secondary);font:inherit;font-size:14px;font-weight:600;cursor:pointer}.view-tabs button[aria-selected="true"]{color:var(--accent)}.view-tabs button[aria-selected="true"]:after{content:"";position:absolute;bottom:-1px;left:0;right:0;height:3px;border-radius:3px;background:var(--accent)}.tab-count{font-size:11px;margin-left:4px;color:var(--text-secondary)}.refresh-button{height:32px;font-size:12px}.refresh-button:disabled{opacity:.6;cursor:wait}.refresh-status{color:var(--text-secondary);font-size:11px}
 .filters{display:block;padding:14px 16px;border-radius:10px}.filter-primary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto auto;gap:12px;align-items:end}.filter-extra{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding-top:14px;margin-top:14px;border-top:1px solid var(--border)}.filter-primary .button{white-space:nowrap}.filter-more[aria-expanded="true"]{border-color:var(--accent);color:var(--accent)}.filter-count{font-size:11px;color:var(--accent)}
+.period-coverage{margin:14px 2px 0;color:var(--text-secondary);font-size:12px;line-height:1.5}
 .summary{grid-template-columns:minmax(240px,1.1fr) repeat(3,minmax(0,1fr));gap:0;margin-top:16px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface);box-shadow:0 8px 30px rgba(24,55,39,.045)}.stat{min-height:145px;border:0;border-left:1px solid var(--border);border-radius:0;padding:22px 24px;display:flex;flex-direction:column;justify-content:center}.stat:first-child{border:0}.stat.main-stat{background:#1d4938;color:#fff;border:0}.stat.main-stat .stat-label,.stat.main-stat .stat-note,.stat.main-stat small{color:#c5dbce}.stat.main-stat strong{color:#fff}.stat-value{margin:12px 0 7px}.stat-link{text-align:left;margin-top:1px;text-decoration:none}.stat-link:hover{text-decoration:underline}
 .section{margin-top:50px}.section-heading h2{font-size:1.75rem;margin:8px 0 4px}.section-heading{margin-bottom:16px}.panel{border-radius:12px;box-shadow:0 5px 20px rgba(24,55,39,.025)}.overview-lower{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}.overview-target{margin-top:50px}.overview-target .panel-subtitle{line-height:1.5}.work-view .section{margin-top:30px}.review-grid{display:grid;grid-template-columns:1fr}.review-grid .compact-table{min-width:850px}
 @media(max-width:1050px){.filter-extra{grid-template-columns:repeat(2,minmax(0,1fr))}.overview-lower{grid-template-columns:minmax(0,1fr)}.overview-lower>section{min-width:0}}
+@media(min-width:681px) and (max-width:1000px){.hero{align-items:flex-start;flex-direction:column;gap:14px}.hero-side{align-self:flex-start;flex-wrap:wrap}}
 @media(max-width:850px){.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.stat:nth-child(3){border-left:0;border-top:1px solid var(--border)}.stat:nth-child(4){border-top:1px solid var(--border)}.stat.main-stat{min-height:132px}.hero-side{align-self:flex-start}}
 @media(max-width:680px){.hero{padding:28px 0 18px}.hero-side{flex-wrap:wrap}.view-tabs{gap:22px;margin-bottom:18px;overflow-x:auto}.view-tabs button{white-space:nowrap}.filter-primary{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.filter-primary #resetFilters{grid-column:auto;grid-row:auto}.filter-extra{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.filter-extra .search-field{grid-column:1/-1}.stat{padding:18px;min-height:120px}.summary{gap:0}.overview-target{margin-top:42px}.section-heading h2{font-size:1.6rem}.hero-side p{font-size:11px}}
 
@@ -228,7 +230,7 @@ html.theme-dark{--bg:#101b17;--surface:#192823;--surface-hover:#23382e;--border:
   <section aria-label="筛选条件" class="animate delay-2">
     <div class="filters">
       <div class="filter-primary">
-      <label class="filter-field"><span>核算月份</span><select id="period" aria-label="核算月份"></select></label>
+      <label class="filter-field"><span>统计周期</span><select id="period" aria-label="统计周期"></select></label>
       <label class="filter-field"><span>采购主体</span><select id="company" aria-label="采购主体"><option value="">全部主体</option></select></label>
       <label class="filter-field"><span>采购负责人</span><select id="owner" aria-label="采购负责人"><option value="">全部负责人</option></select></label>
       <button id="toggleExtra" class="button filter-more" type="button" aria-expanded="false" aria-controls="extraFilters">更多筛选 <span class="filter-count" id="extraCount"></span> <span aria-hidden="true">⌄</span></button>
@@ -243,24 +245,25 @@ html.theme-dark{--bg:#101b17;--surface:#192823;--surface-hover:#23382e;--border:
     </div>
   </section>
   <div id="overviewView" role="tabpanel" aria-labelledby="overviewTab">
-  <section class="summary animate delay-3" aria-label="月度降本概览">
-    <article class="stat main-stat"><div class="stat-label">本月降本合计</div><div class="stat-value"><strong id="kpiTotal">—</strong><small>元</small></div><div class="stat-note">按当前筛选 · 含税价差</div></article>
+  <p id="periodCoverage" class="period-coverage" role="status" hidden></p>
+  <section class="summary animate delay-3" aria-label="降本概览">
+    <article class="stat main-stat"><div class="stat-label" id="totalLabel">本月降本合计</div><div class="stat-value"><strong id="kpiTotal">—</strong><small>元</small></div><div class="stat-note">按当前筛选 · 含税价差</div></article>
     <article class="stat"><div class="stat-label">新增降本</div><div class="stat-value"><strong id="kpiNew">—</strong><small>元</small></div><div class="stat-note">核算开始当年产生</div></article>
     <article class="stat"><div class="stat-label">存量降本</div><div class="stat-value"><strong id="kpiExisting">—</strong><small>元</small></div><div class="stat-note">跨年后仍在有效期内</div></article>
-    <article class="stat"><div class="stat-label">本月待复核</div><div class="stat-value"><strong id="kpiExceptions">—</strong><small>笔</small></div><button id="jumpReview" class="stat-link" type="button">全量待复核，不计入降本 →</button></article>
+    <article class="stat"><div class="stat-label" id="exceptionLabel">本月待复核</div><div class="stat-value"><strong id="kpiExceptions">—</strong><small>笔</small></div><button id="jumpReview" class="stat-link" type="button">全量待复核，不计入降本 →</button></article>
   </section>
   <section class="section" aria-labelledby="analysis-title">
-    <div class="section-heading"><div><div class="section-kicker">01 / MONTHLY PERFORMANCE</div><h2 id="analysis-title">降本表现</h2><p class="section-copy">查看每月新增与存量贡献，以及当月降本构成。</p></div><span class="side">金额单位：元 · 随筛选变化</span></div>
+    <div class="section-heading"><div><div class="section-kicker">01 / MONTHLY PERFORMANCE</div><h2 id="analysis-title">降本表现</h2><p class="section-copy">查看每月新增与存量贡献，以及所选周期的降本构成。</p></div><span class="side">金额单位：元 · 随筛选变化</span></div>
     <div class="analysis-grid">
       <article class="panel"><div class="panel-title">月度降本趋势</div><div class="panel-subtitle">已匹配的模拟初稿 · 点击柱形切换月份</div><div class="chart-container"><canvas id="trendChart" role="img" aria-label="各月新增和存量降本金额柱状图"></canvas></div><div id="trendAccessible" class="sr-only" aria-live="polite"></div></article>
-      <article class="panel"><div class="panel-title">本月降本构成</div><div class="panel-subtitle">按降本类型查看金额</div><div id="typeBreakdown" class="breakdown"></div><p class="filter-hint">点击类型查看对应核算明细</p></article>
+      <article class="panel"><div class="panel-title" id="compositionTitle">本月降本构成</div><div class="panel-subtitle">按降本类型查看金额</div><div id="typeBreakdown" class="breakdown"></div><p class="filter-hint">点击类型查看对应核算明细</p></article>
     </div>
   </section>
   <div class="overview-lower"><section class="section" aria-labelledby="dimension-title">
-    <div class="section-heading"><div><div class="section-kicker">02 / DIMENSION BREAKDOWN</div><h2 id="dimension-title">降本分布</h2><p class="section-copy">从五级分类、供应商或采购主体查看当月降本，点击项目筛选。</p></div><span class="side">金额单位：元 · 随筛选变化</span></div>
+    <div class="section-heading"><div><div class="section-kicker">02 / DIMENSION BREAKDOWN</div><h2 id="dimension-title">降本分布</h2><p class="section-copy">从五级分类、供应商或采购主体查看所选周期的降本，点击项目筛选。</p></div><span class="side">金额单位：元 · 随筛选变化</span></div>
     <article class="panel"><div class="panel-title">按业务维度查看</div><div class="dimension-tabs" role="tablist" aria-label="降本分布维度"><button id="dimCategory" type="button" role="tab" aria-selected="true" aria-controls="dimensionPanel">五级分类</button><button id="dimSupplier" type="button" role="tab" aria-selected="false" aria-controls="dimensionPanel" tabindex="-1">供应商</button><button id="dimCompany" type="button" role="tab" aria-selected="false" aria-controls="dimensionPanel" tabindex="-1">采购主体</button></div><div id="dimensionPanel" role="tabpanel" aria-labelledby="dimCategory"><div id="dimensionRows"></div><div class="pager"><span id="dimensionPage">—</span><div class="pager-actions"><button id="dimensionPrev" class="button" type="button">上一页</button><button id="dimensionNext" class="button" type="button">下一页</button></div></div></div><p class="dimension-caption">条形长度以当前维度的最大绝对金额为基准；可逐页查看全部项目。</p></article>
   </section>
-  <section class="overview-target" aria-labelledby="target-title"><div class="section-heading"><div><div class="section-kicker">03 / ANNUAL GOALS</div><h2 id="target-title">年度目标</h2><p class="section-copy">查看采购员的年度累计降本及目标完成情况。</p></div></div><article class="panel"><div class="panel-title">采购员目标完成率</div><div class="panel-subtitle">截至所选月份 · 全部主体和类型，不随上方明细筛选</div><div class="table-scroll" style="margin-top:18px"><table aria-label="模拟采购员年度目标完成情况"><thead><tr><th scope="col">采购员</th><th scope="col" class="numeric">年度累计</th><th scope="col" class="numeric">年度目标</th><th scope="col" class="numeric">完成率</th></tr></thead><tbody id="targetBody"></tbody></table></div><p class="note" style="margin-top:16px">负责人及目标均为虚构示例。目标完成率独立计算；待复核记录未纳入模拟累计。</p></article></section></div>
+  <section class="overview-target" aria-labelledby="target-title"><div class="section-heading"><div><div class="section-kicker">03 / ANNUAL GOALS</div><h2 id="target-title">年度目标</h2><p class="section-copy">查看采购员的年度累计降本及目标完成情况。</p></div></div><article class="panel"><div class="panel-title">采购员目标完成率</div><div class="panel-subtitle" id="targetSubtitle">截至所选月份 · 全部主体和类型，不随上方明细筛选</div><div class="table-scroll" style="margin-top:18px"><table aria-label="模拟采购员年度目标完成情况"><thead><tr><th scope="col">采购员</th><th scope="col" class="numeric">年度累计</th><th scope="col" class="numeric">年度目标</th><th scope="col" class="numeric">完成率</th></tr></thead><tbody id="targetBody"></tbody></table></div><p class="note" style="margin-top:16px">负责人及目标均为虚构示例。目标完成率独立计算；待复核记录未纳入模拟累计。</p></article></section></div>
   </div>
   <div id="detailView" class="work-view" role="tabpanel" aria-labelledby="detailViewTab" hidden>
   <section class="section" aria-labelledby="detail-title">
@@ -272,7 +275,7 @@ html.theme-dark{--bg:#101b17;--surface:#192823;--surface-hover:#23382e;--border:
   </div>
   <div id="reviewView" class="work-view" role="tabpanel" aria-labelledby="reviewViewTab" hidden>
   <section class="section" id="reviewSection" aria-labelledby="review-title">
-    <div class="section-heading"><div><div class="section-kicker">REVIEW &amp; REFERENCE</div><h2 id="review-title">复核与参考</h2><p class="section-copy">按所选月份展示全部事项，不随其他筛选条件变化。</p></div><span class="side">税率变化与返利不计入降本</span></div>
+    <div class="section-heading"><div><div class="section-kicker">REVIEW &amp; REFERENCE</div><h2 id="review-title">复核与参考</h2><p class="section-copy">按所选周期展示全部事项，不随其他筛选条件变化。</p></div><span class="side">税率变化与返利不计入降本</span></div>
     <div class="review-grid">
       <article class="panel"><div class="panel-title">待复核及参考记录</div><div class="panel-subtitle">切换查看模拟异常、税率变化和返利反馈</div>
         <div class="tab-list" role="tablist" aria-label="复核与参考记录类型"><button id="tabExceptions" type="button" role="tab" aria-selected="true" aria-controls="referencePanel">待复核</button><button id="tabTax" type="button" role="tab" aria-selected="false" aria-controls="referencePanel" tabindex="-1">税率变化</button><button id="tabRebates" type="button" role="tab" aria-selected="false" aria-controls="referencePanel" tabindex="-1">返利反馈</button></div>
@@ -447,7 +450,7 @@ function matchesFilters(row) {
     (!type || row['核算类型'] === type) && (!category || row['五级分类'] === category) && (!supplier || row['供应商名称'] === supplier) &&
     (!q || [row['物料编码'], row['物料名称'], row['供应商名称']].some(function(x) { return String(x == null ? '' : x).toLocaleLowerCase().includes(q); }));
 }
-function byMonth(row) { return row['核算月份'] === state.month; }
+function matchesPeriod(value) { var month = monthOf(value); return state.month.length === 4 ? month.slice(0, 4) === state.month : month === state.month; }
 function sum(rows, field) { return rows.reduce(function(a, r) { return a + (validNumber(r[field]) ? Number(r[field]) : 0); }, 0); }
 
 var ChartManager = {
@@ -538,11 +541,12 @@ function drawDetail() {
   });
 }
 function renderTargets() {
-  var year = state.month.slice(0, 4), totals = new Map();
+  var year = state.month.slice(0, 4), endMonth = state.month.length === 4 ? year + '-12' : state.month, totals = new Map();
+  $('targetSubtitle').textContent = (state.month.length === 4 ? year + ' 年 · 按已有模拟数据累计' : '统计至 ' + state.month + ' · 按已有模拟数据累计') + ' · 全部主体和类型，不随上方明细筛选';
   state.data.detail.forEach(function(r) {
-    if (r['核算月份'].slice(0,4) === year && r['核算月份'] <= state.month) totals.set(r['采购负责人'], (totals.get(r['采购负责人']) || 0) + Number(r['降本金额']));
+    if (r['核算月份'].slice(0,4) === year && r['核算月份'] <= endMonth) totals.set(r['采购负责人'], (totals.get(r['采购负责人']) || 0) + Number(r['降本金额']));
   });
-  var targetMap = new Map(state.data.targets.map(function(r) { return [r['采购负责人'], r['年度目标金额']]; }));
+  var targetMap = new Map(state.data.targets.filter(function(r) { return String(r['年度']) === year; }).map(function(r) { return [r['采购负责人'], r['年度目标金额']]; }));
   var names = Array.from(new Set(Array.from(targetMap.keys()).concat(Array.from(totals.keys())))).sort(function(a,b) { return a.localeCompare(b, 'zh-CN'); });
   var body = $('targetBody'); body.replaceChildren();
   names.forEach(function(name) {
@@ -559,15 +563,15 @@ var referenceFields = {
   rebates: ['采购组织', '供应商', '物料', '五级分类', '执行日期', '返利比例', '返利条款']
 };
 function referenceSource() {
-  if (state.reference === 'exceptions') return state.data.exceptions.filter(function(r) { return monthOf(r['出入库日期']) === state.month; });
-  if (state.reference === 'tax_changes') return state.data.tax_changes.filter(function(r) { return monthOf(r['新价格生效日期']) === state.month; });
-  return state.data.rebates.filter(function(r) { return monthOf(r['执行日期']) === state.month; });
+  if (state.reference === 'exceptions') return state.data.exceptions.filter(function(r) { return matchesPeriod(r['出入库日期']); });
+  if (state.reference === 'tax_changes') return state.data.tax_changes.filter(function(r) { return matchesPeriod(r['新价格生效日期']); });
+  return state.data.rebates.filter(function(r) { return matchesPeriod(r['执行日期']); });
 }
 function drawReference() {
   var rows = referenceSource(), fields = referenceFields[state.reference], size = 8, totalPages = Math.max(1, Math.ceil(rows.length / size));
   state.referenceRows = rows; state.referencePage = Math.max(1, Math.min(state.referencePage, totalPages));
   setHead('referenceHead', fields); var body = $('referenceBody'); body.replaceChildren();
-  if (!rows.length) emptyRow(body, fields.length, '所选月份暂无记录');
+  if (!rows.length) emptyRow(body, fields.length, '所选周期暂无记录');
   rows.slice((state.referencePage - 1) * size, state.referencePage * size).forEach(function(r) {
     var tr = document.createElement('tr'); fields.forEach(function(field) { textCell(tr, r[field], field); });
     if (state.reference === 'exceptions') {
@@ -617,12 +621,19 @@ function openDetail(row, exception) {
 }
 function renderAll() {
   if (!state.data) return;
-  var rows = state.data.detail.filter(function(r) { return byMonth(r) && matchesFilters(r); });
+  var rows = state.data.detail.filter(function(r) { return matchesPeriod(r['核算月份']) && matchesFilters(r); });
   state.detailRows = rows.slice().sort(function(a,b) { return String(b['出入库日期']).localeCompare(String(a['出入库日期'])) || Number(a['演示行号']) - Number(b['演示行号']); });
   $('kpiTotal').textContent = money(sum(rows, '降本金额'));
   $('kpiNew').textContent = money(sum(rows.filter(function(r) { return r['新增存量'] === '新增'; }), '降本金额'));
   $('kpiExisting').textContent = money(sum(rows.filter(function(r) { return r['新增存量'] === '存量'; }), '降本金额'));
-  var exceptionCount = state.data.exceptions.filter(function(r) { return monthOf(r['出入库日期']) === state.month; }).length;
+  var annual = state.month.length === 4;
+  $('totalLabel').textContent = annual ? '年度累计降本' : '本月降本合计';
+  $('exceptionLabel').textContent = annual ? '年度待复核' : '本月待复核';
+  $('compositionTitle').textContent = annual ? '年度降本构成' : '本月降本构成';
+  var coverage = Array.from(new Set(state.data.receipts.map(function(r) { return monthOf(r['出入库日期']); }).filter(function(m) { return m.slice(0,4) === state.month.slice(0,4); }))).sort();
+  $('periodCoverage').hidden = !annual;
+  $('periodCoverage').textContent = annual && coverage.length ? state.month + ' 年累计 · 现有模拟入库记录涉及 ' + coverage[0] + ' 至 ' + coverage[coverage.length-1] + '，完整性未核验' : '';
+  var exceptionCount = state.data.exceptions.filter(function(r) { return matchesPeriod(r['出入库日期']); }).length;
   $('kpiExceptions').textContent = exceptionCount.toLocaleString('zh-CN'); $('reviewTabCount').textContent = '· ' + exceptionCount.toLocaleString('zh-CN') + ' 待复核';
   var extraCount = ['kind','category','supplier','search'].filter(function(id) { return $(id).value.trim() !== ''; }).length;
   $('extraCount').textContent = extraCount ? '· ' + extraCount + ' 项' : '';
@@ -679,9 +690,15 @@ async function loadDashboard() {
     if (!months.length) throw new Error('模拟数据没有可展示的业务月份');
     state.data = data;
     state.receiptById = new Map(data.receipts.map(function(r) { return [Number(r['演示行号']), r]; }));
+    var years = Array.from(new Set(months.map(function(m) { return m.slice(0,4); })));
     $('period').replaceChildren();
-    months.forEach(function(m) { var option = document.createElement('option'); option.value = m; option.textContent = m; $('period').appendChild(option); });
-    state.month = months.includes(previousMonth) ? previousMonth : months[0]; $('period').value = state.month;
+    var annualGroup = document.createElement('optgroup'); annualGroup.label = '年度累计';
+    years.forEach(function(y) { var option = document.createElement('option'); option.value = y; option.textContent = y + ' 年累计'; annualGroup.appendChild(option); });
+    $('period').appendChild(annualGroup);
+    var monthlyGroup = document.createElement('optgroup'); monthlyGroup.label = '月度';
+    months.forEach(function(m) { var option = document.createElement('option'); option.value = m; option.textContent = m; monthlyGroup.appendChild(option); });
+    $('period').appendChild(monthlyGroup);
+    state.month = months.concat(years).includes(previousMonth) ? previousMonth : months[0]; $('period').value = state.month;
     selectOptions('company', data.detail.map(function(r) { return r['公司名称']; }), '全部主体');
     selectOptions('owner', data.detail.map(function(r) { return r['采购负责人']; }), '全部负责人');
     selectOptions('kind', types, '全部类型');
@@ -689,11 +706,12 @@ async function loadDashboard() {
     selectOptions('supplier', data.detail.map(function(r) { return r['供应商名称']; }), '全部供应商');
     $('snapshotInfo').textContent = '模拟库导入于 ' + String(data.meta['导入时间'] || '—').replace('T', ' ').slice(0, 19) + ' · 金额单位：元';
     var changed = Object.keys(selected).some(function(id) { return selected[id] && $(id).value !== selected[id]; });
-    $('refreshStatus').textContent = previousMonth && previousMonth !== state.month ? '原月份已不存在，已切换至 ' + state.month : changed ? '部分筛选项已不存在，已清除' : hadData ? '已读取最新数据' : '';
+    $('refreshStatus').textContent = previousMonth && previousMonth !== state.month ? '原周期已不存在，已切换至 ' + state.month : changed ? '部分筛选项已不存在，已清除' : hadData ? '已读取最新数据' : '';
     $('loadStatus').hidden = true; $('loadStatus').classList.remove('error'); $('dashboard').hidden = false; renderAll();
   } catch (error) {
-    $('loadStatus').hidden = false; $('loadStatus').classList.add('error'); $('loadStatus').textContent = '模拟数据读取失败：' + (error.message || String(error));
-    $('refreshStatus').textContent = '读取失败，请重试';
+    var explanation = error instanceof TypeError ? '无法连接本地服务，请检查页面地址和服务是否运行。' : (error.message || String(error));
+    $('loadStatus').hidden = false; $('loadStatus').classList.add('error'); $('loadStatus').textContent = '模拟数据读取失败：' + explanation + (hadData ? ' 当前页面数据可能不是最新，请重新读取。' : '');
+    $('refreshStatus').textContent = hadData ? '读取失败，数据可能不是最新' : '读取失败，请重试';
   } finally { $('refreshData').disabled = false; }
 }
 setFilterEvents();
