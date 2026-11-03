@@ -45,7 +45,8 @@ uv run python scripts/build_processed.py
 uv run python scripts/archive_procurement_increment.py
 uv run python scripts/archive_procurement_increment.py 2026-09
 
-# 本机看板：打开 http://127.0.0.1:8765
+# 本机看板：采购增量 http://127.0.0.1:8765
+# 采购降本模拟演示 http://127.0.0.1:8765/savings
 uv run python scripts/run_dashboard.py
 # 端口被占用时可指定其他端口
 uv run python scripts/run_dashboard.py --port 18765
@@ -57,6 +58,8 @@ uv run python -m unittest discover -s tests -t tests
 uv run python scripts/export_dispatch_tasks.py
 uv run python scripts/export_dispatch_tasks.py 2026-09 --priority all
 ```
+
+采购降本页面展示的是虚构数据，与采购增量共用本地服务。其数据由[模拟演示 notebook](notebooks/采购降本统计/采购降本模拟演示.ipynb) 的最后一节生成快照；修改模拟输入后需完整运行 notebook 更新快照，不写入正式业务数据库。
 
 一个日期参数表示整年、整月或当天；两个参数表示闭区间。已建立的数据集在指定窗口无记录时返回保留字段的空 DataFrame；数据库或数据集未建立、processed 已知缺档或过期时明确报错：
 

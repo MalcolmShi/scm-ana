@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""采购增量本地看板：查询数据库并返回表格文本。"""
+"""供应链分析本地看板：采购增量及采购降本模拟演示。"""
 from __future__ import annotations
 import argparse
 import csv
@@ -12,9 +12,11 @@ from urllib.parse import parse_qs, urlparse
 import numpy as np
 import pandas as pd
 from services import procurement_increment as service
+from services import procurement_savings_demo as savings_demo
 from paths import PROJECT_ROOT
 
 PAGE = PROJECT_ROOT / 'src' / 'web' / 'procurement_increment.html'
+SAVINGS_PAGE = PROJECT_ROOT / 'src' / 'web' / 'procurement_savings.html'
 
 
 def table_text(frame):
@@ -47,6 +49,10 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if route.path == '/':
                 data, content = PAGE.read_bytes(), 'text/html; charset=utf-8'
+            elif route.path == '/savings':
+                data, content = SAVINGS_PAGE.read_bytes(), 'text/html; charset=utf-8'
+            elif route.path == '/api/savings-demo':
+                data, content = savings_demo.read_database(), 'application/json; charset=utf-8'
             elif route.path in ('/vendor/chart.umd.min.js', '/vendor/html-to-image.js'):
                 data = (PAGE.parent / route.path.lstrip('/')).read_bytes()
                 content = 'text/javascript; charset=utf-8'
@@ -69,7 +75,7 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError, KeyError) as exc:
             data, content = str(exc).encode(), 'text/plain; charset=utf-8'
             self.send_response(400)
-        except FileNotFoundError as exc:
+        except (FileNotFoundError, savings_demo.DemoDataUnavailable) as exc:
             data, content = str(exc).encode(), 'text/plain; charset=utf-8'
             self.send_response(503)
         self.send_header('Content-Type', content)
@@ -88,7 +94,7 @@ def main():
         server = ThreadingHTTPServer(('127.0.0.1', port), Handler)
     except OSError as exc:
         parser.exit(1, f'无法启动本地服务（端口 {port}）：{exc}；可用 --port 指定其他端口。\n')
-    print(f'采购增量：http://127.0.0.1:{port}', flush=True)
+    print(f'供应链分析：http://127.0.0.1:{port}  采购降本模拟：http://127.0.0.1:{port}/savings', flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
