@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from datetime import datetime
+from pathlib import Path
 
 import duckdb
 import pandas as pd
@@ -13,7 +15,7 @@ from paths import DATA_ROOT, PROJECT_ROOT, TIMEZONE
 
 DATA_DIR = PROJECT_ROOT / 'notebooks' / '采购降本统计' / '演示数据'
 SNAPSHOT = DATA_DIR / '模拟降本看板快照.json'
-DATABASE = DATA_ROOT / 'procurement_savings_demo.duckdb'
+DATABASE = Path(os.environ.get('SCM_SAVINGS_DB_PATH') or DATA_ROOT / 'procurement_savings_demo.duckdb')
 SCHEMA = 'demo_savings'
 INPUT_FILES = (
     '模拟协议版本-扩展.csv',

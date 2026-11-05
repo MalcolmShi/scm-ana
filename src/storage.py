@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import re
 from datetime import datetime
 from pathlib import Path
@@ -12,7 +13,8 @@ import pandas as pd
 
 from paths import DATA_ROOT, TIMEZONE
 
-DATABASE = DATA_ROOT / 'scm.duckdb'
+#: 默认读写正式库；发布/演示等只读场景可用 SCM_DB_PATH 指向精简库
+DATABASE = Path(os.environ.get('SCM_DB_PATH') or DATA_ROOT / 'scm.duckdb')
 LAYERS = ('raw', 'processed')
 
 

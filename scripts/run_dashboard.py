@@ -5,6 +5,7 @@ import argparse
 import csv
 import io
 import math
+import os
 from datetime import date, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
@@ -88,12 +89,16 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--port', type=int, default=8765)
-    port = parser.parse_args().port
+    # 发布到托管环境时由平台注入 PORT，并需要绑定 0.0.0.0；
+    # 本机运行时仍只监听 127.0.0.1，避免把采购数据暴露到局域网。
+    parser.add_argument('--port', type=int, default=int(os.environ.get('PORT', '8765')))
+    parser.add_argument('--host', default='0.0.0.0' if os.environ.get('PORT') else '127.0.0.1')
+    args = parser.parse_args()
+    port, host = args.port, args.host
     try:
-        server = ThreadingHTTPServer(('127.0.0.1', port), Handler)
+        server = ThreadingHTTPServer((host, port), Handler)
     except OSError as exc:
-        parser.exit(1, f'无法启动本地服务（端口 {port}）：{exc}；可用 --port 指定其他端口。\n')
+        parser.exit(1, f'无法启动本地服务（{host}:{port}）：{exc}；可用 --port 指定其他端口。\n')
     print(f'供应链分析：http://127.0.0.1:{port}  采购降本模拟：http://127.0.0.1:{port}/savings', flush=True)
     try:
         server.serve_forever()
