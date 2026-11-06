@@ -231,7 +231,25 @@ html.theme-dark{--bg:#101b17;--surface:#192823;--surface-hover:#23382e;--border:
 .material-drawer{position:fixed;inset:0 0 0 auto;margin:0;width:min(1000px,94vw);max-width:none;height:100dvh;max-height:none;padding:0;border:0;border-left:1px solid var(--border);background:var(--bg);color:var(--text);box-shadow:-12px 0 42px rgba(0,0,0,.16);overflow:auto}
 .material-drawer::backdrop{background:rgba(11,28,20,.45)}.drawer-header{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 28px;background:var(--surface);border-bottom:1px solid var(--border)}.drawer-title{min-width:0}.drawer-title p{font-size:12px;color:var(--text-secondary);margin-bottom:4px}.drawer-title h2{font-size:1.18rem;line-height:1.4;overflow-wrap:anywhere}.drawer-actions{display:flex;align-items:center;gap:6px;flex:none}.drawer-actions button{border:1px solid var(--border);border-radius:7px;background:var(--surface);padding:8px 10px;font-size:12px;white-space:nowrap}.drawer-actions button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}.drawer-actions button:disabled{opacity:.4;cursor:not-allowed}.drawer-actions .drawer-close{font-size:20px;line-height:1;padding:5px 10px;margin-left:4px}.drawer-body{padding:24px 28px 48px}.material-drawer .drill-section,.material-drawer .detail-section{margin-top:0}.material-drawer .detail-section{margin-top:40px;scroll-margin-top:100px}.material-drawer .section-top h2{font-size:1.35rem;margin:0 0 6px}.material-drawer .section-top{align-items:center}.material-drawer .trend-panel{padding:20px}.material-drawer .chart-container{height:300px}.drawer-loading{font-size:13px;color:var(--text-secondary);padding:8px 0}.drawer-loading:empty{display:none}
 @media(max-width:600px){.material-drawer{width:100%;border-left:0}.drawer-header{padding:12px 16px;align-items:flex-start;flex-wrap:wrap;gap:8px}.drawer-title{flex:1 0 100%}.drawer-title h2{font-size:1rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.drawer-actions{gap:4px}.drawer-actions button{padding:8px 9px}.drawer-actions .drawer-close{padding:5px 8px}.drawer-body{padding:20px 16px 40px}.material-drawer .detail-section{scroll-margin-top:150px}.material-drawer .section-top{align-items:flex-start}.material-drawer .trend-panel{padding:14px}}
+/* 抽屉：右侧滑出、点击空白关闭、滚动层次 */
+.material-drawer{overscroll-behavior:contain;border-radius:12px 0 0 12px;box-shadow:-20px 0 56px rgba(11,28,20,.2)}
+.material-drawer[open]{animation:drawer-in .32s cubic-bezier(.22,.61,.36,1) backwards}
+.material-drawer[open]::backdrop{animation:drawer-backdrop-in .26s ease-out}
+.material-drawer.is-closing{animation:drawer-out .22s cubic-bezier(.4,0,1,1) forwards}
+.material-drawer.is-closing::backdrop{animation:drawer-backdrop-out .22s ease-in forwards}
+@keyframes drawer-in{from{transform:translate3d(100%,0,0)}to{transform:translate3d(0,0,0)}}
+@keyframes drawer-out{from{transform:translate3d(0,0,0)}to{transform:translate3d(100%,0,0)}}
+@keyframes drawer-backdrop-in{from{opacity:0}to{opacity:1}}
+@keyframes drawer-backdrop-out{from{opacity:1}to{opacity:0}}
+.drawer-header{transition:box-shadow .16s ease}
+.material-drawer.is-scrolled .drawer-header{box-shadow:0 8px 18px rgba(11,28,20,.1)}
+.drawer-actions .drawer-close{min-width:36px;min-height:36px;display:inline-flex;align-items:center;justify-content:center}
+body.drawer-open{overflow:hidden}
+@media(max-width:600px){.material-drawer{border-radius:0}}
+@media(prefers-reduced-motion:reduce){.material-drawer[open],.material-drawer[open]::backdrop,.material-drawer.is-closing,.material-drawer.is-closing::backdrop{animation:none}.drawer-header{transition:none}}
   </style>
+  <link rel="stylesheet" href="/vendor/ui-select.css">
+  <script src="/vendor/ui-select.js"></script>
   <script src="/vendor/chart.umd.min.js"></script>
   <script>if (typeof Chart !== "undefined") Chart.defaults.animation = false;</script>
 </head>
@@ -257,7 +275,7 @@ html.theme-dark{--bg:#101b17;--surface:#192823;--surface-hover:#23382e;--border:
 <header class="masthead animate">
   <div class="brand"><span class="brandmark">S</span><span>供应链分析 <span class="brand-sep">/</span> 决策工作台</span></div>
   <nav class="suite-nav" aria-label="分析场景"><a href="/" aria-current="page">采购增量</a><a href="/savings">采购降本 <span style="font-size:11px">· 模拟</span></a></nav>
-  <div class="header-right"><span class="live-dot"></span>本地数据 <span class="header-divider"></span><label for="period">业务月份</label><select id="period" aria-label="业务月份"></select></div>
+  <div class="header-right"><span class="live-dot"></span>本地数据 <span class="header-divider"></span><label for="period">业务月份</label><select id="period" aria-label="业务月份" data-align="end"></select></div>
 </header>
 <section class="hero animate delay-1" aria-labelledby="title">
   <div><div class="kicker"><span class="kicker-line"></span> 采购决策 <span class="kicker-index">/ 增量分析</span></div><h1 id="title">采购增量分析<span class="hero-dot">.</span></h1><p>找到需求持续增长、值得进一步谈判的物料。</p></div>
@@ -506,7 +524,7 @@ async function selectMaterial(row){
   state.material=String(row['物料编码']);state.purchaseMonth='';state.page=1;state.monthly=[];var token=++state.request;state.detailRequest++;var index=state.filtered.findIndex(function(item){return String(item['物料编码'])===state.material});state.materialPage=Math.floor(index/50)+1;
   el('supplier').value='';el('company').value='';el('drill').hidden=false;el('detailSection').hidden=false;el('selected').textContent=value(row['物料名称']);el('selected').title=value(row['物料名称']);el('drawerPosition').textContent='物料 '+(index+1)+' / '+state.filtered.length+' · '+state.material;el('previousMaterial').disabled=index<=0;el('nextMaterial').disabled=index>=state.filtered.length-1;
   el('trendStatus').textContent='正在读取月度趋势…';el('detailInfo').textContent='正在读取明细…';el('monthlyTable').replaceChildren();el('detailHead').replaceChildren();el('detailBody').replaceChildren();el('pageLabel').textContent='';ChartManager.destroyAll();renderMaterials();
-  if(!el('materialDrawer').open)el('materialDrawer').showModal();el('materialDrawer').scrollTop=0;
+  if(!drawer.open){drawer.showModal();document.body.classList.add('drawer-open')}drawer.scrollTop=0;drawer.classList.remove('is-scrolled');
   var result=await api('/api/monthly',{month:state.month,material:state.material});if(token!==state.request)return;state.monthly=result.rows;el('trendStatus').textContent=result.rows.length?'':'暂无月度数据';renderTrend();await loadDetails();
 }
 async function loadDetails(){
@@ -516,8 +534,36 @@ async function loadDetails(){
 }
 el('search').addEventListener('input',function(){state.materialPage=1;renderMaterials()});el('level').addEventListener('change',function(){state.materialPage=1;renderMaterials()});el('materialPrev').addEventListener('click',function(){state.materialPage--;renderMaterials()});el('materialNext').addEventListener('click',function(){state.materialPage++;renderMaterials()});el('period').addEventListener('change',function(){loadReport().catch(showError)});el('filterDetails').addEventListener('click',function(){state.page=1;loadDetails().catch(showError)});el('prev').addEventListener('click',function(){state.page--;loadDetails().catch(showError)});el('next').addEventListener('click',function(){state.page++;loadDetails().catch(showError)});el('allMonths').addEventListener('click',function(){chooseMonth('')});
 function stepMaterial(direction){var index=state.filtered.findIndex(function(row){return String(row['物料编码'])===state.material});var next=state.filtered[index+direction];if(next)selectMaterial(next).catch(showError)}
-el('previousMaterial').addEventListener('click',function(){stepMaterial(-1)});el('nextMaterial').addEventListener('click',function(){stepMaterial(1)});el('closeMaterial').addEventListener('click',function(){el('materialDrawer').close()});
-el('materialDrawer').addEventListener('close',function(){state.request++;state.detailRequest++;var active=el('materials').querySelector('tr.active');if(active)active.focus({preventScroll:true})});
+el('previousMaterial').addEventListener('click',function(){stepMaterial(-1)});el('nextMaterial').addEventListener('click',function(){stepMaterial(1)});
+var drawer=el('materialDrawer');
+function drawerMotionReduced(){return window.matchMedia('(prefers-reduced-motion: reduce)').matches}
+function afterDrawerClosed(){
+  drawer.classList.remove('is-closing');drawer.classList.remove('is-scrolled');document.body.classList.remove('drawer-open');
+  state.request++;state.detailRequest++;var active=el('materials').querySelector('tr.active');if(active)active.focus({preventScroll:true});
+}
+function closeDrawer(){
+  if(!drawer.open||drawer.classList.contains('is-closing'))return;
+  if(drawerMotionReduced()){afterDrawerClosed();drawer.close();return}
+  drawer.classList.add('is-closing');
+  var finished=false,finish=function(){if(finished)return;finished=true;afterDrawerClosed();drawer.close()};
+  drawer.addEventListener('animationend',function handler(event){if(event.target!==drawer)return;drawer.removeEventListener('animationend',handler);finish()});
+  setTimeout(finish,400);
+}
+el('closeMaterial').addEventListener('click',closeDrawer);
+drawer.addEventListener('cancel',function(event){if(drawerMotionReduced())return;event.preventDefault();closeDrawer()});
+drawer.addEventListener('click',function(event){
+  if(event.target!==drawer)return;
+  var box=drawer.getBoundingClientRect();
+  if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom)closeDrawer();
+});
+drawer.addEventListener('keydown',function(event){
+  if(event.key!=='ArrowLeft'&&event.key!=='ArrowRight')return;
+  var target=event.target,tag=(target.tagName||'').toLowerCase();
+  if(tag==='input'||tag==='select'||tag==='textarea'||target.isContentEditable)return;
+  event.preventDefault();stepMaterial(event.key==='ArrowLeft'?-1:1);
+});
+drawer.addEventListener('scroll',function(){drawer.classList.toggle('is-scrolled',drawer.scrollTop>2)},{passive:true});
+drawer.addEventListener('close',afterDrawerClosed);
 function showView(name){
   var analysis=name==='analysis';
   el('analysisView').hidden=!analysis; el('indicatorsView').hidden=analysis;

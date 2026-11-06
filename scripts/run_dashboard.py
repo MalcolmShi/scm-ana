@@ -18,6 +18,12 @@ from paths import PROJECT_ROOT
 
 PAGE = PROJECT_ROOT / 'src' / 'web' / 'procurement_increment.html'
 SAVINGS_PAGE = PROJECT_ROOT / 'src' / 'web' / 'procurement_savings.html'
+STATIC_ASSETS = {
+    '/vendor/chart.umd.min.js': 'text/javascript; charset=utf-8',
+    '/vendor/html-to-image.js': 'text/javascript; charset=utf-8',
+    '/vendor/ui-select.js': 'text/javascript; charset=utf-8',
+    '/vendor/ui-select.css': 'text/css; charset=utf-8',
+}
 
 
 def table_text(frame):
@@ -54,9 +60,9 @@ class Handler(BaseHTTPRequestHandler):
                 data, content = SAVINGS_PAGE.read_bytes(), 'text/html; charset=utf-8'
             elif route.path == '/api/savings-demo':
                 data, content = savings_demo.read_database(), 'application/json; charset=utf-8'
-            elif route.path in ('/vendor/chart.umd.min.js', '/vendor/html-to-image.js'):
+            elif route.path in STATIC_ASSETS:
                 data = (PAGE.parent / route.path.lstrip('/')).read_bytes()
-                content = 'text/javascript; charset=utf-8'
+                content = STATIC_ASSETS[route.path]
             else:
                 if route.path == '/api/periods':
                     frame = pd.DataFrame({'month': service.available_periods()})

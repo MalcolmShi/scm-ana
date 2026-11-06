@@ -180,7 +180,7 @@ dialog{width:min(940px,calc(100vw - 32px));max-height:85vh;margin:auto;padding:0
 html.theme-light{--bg:#f5f6f3;--surface:#fff;--surface-hover:#edf3ef;--border:#dfe7e0;--text:#1d302a;--text-secondary:#718078;--accent:#286b55;--accent-secondary:#a4c8b3}
 html.theme-dark{--bg:#101b17;--surface:#192823;--surface-hover:#23382e;--border:#35483e;--text:#edf5ef;--text-secondary:#a5b6ac;--accent:#8bc9aa;--accent-secondary:#426c58}
 #main-content{max-width:1440px}.hero{padding:36px 0 22px}.hero h1{font-size:clamp(2.5rem,3.6vw,3.25rem);margin:10px 0 8px}.hero-side{display:flex;align-items:center;gap:10px}.hero-side p{margin:0}.demo-badge{padding:5px 9px}
-.view-tabs{display:flex;gap:27px;border-bottom:1px solid var(--border);margin-bottom:24px}.view-tabs button{position:relative;padding:11px 2px 13px;border:0;background:transparent;color:var(--text-secondary);font:inherit;font-size:14px;font-weight:600;cursor:pointer}.view-tabs button[aria-selected="true"]{color:var(--accent)}.view-tabs button[aria-selected="true"]:after{content:"";position:absolute;bottom:-1px;left:0;right:0;height:3px;border-radius:3px;background:var(--accent)}.tab-count{font-size:11px;margin-left:4px;color:var(--text-secondary)}.refresh-button{height:32px;font-size:12px}.refresh-button:disabled{opacity:.6;cursor:wait}.refresh-status{color:var(--text-secondary);font-size:11px}
+.view-tabs{display:flex;gap:27px;border-bottom:1px solid var(--border);margin-bottom:24px}.view-tabs button{position:relative;padding:11px 2px 13px;border:0;background:transparent;color:var(--text-secondary);font:inherit;font-size:14px;font-weight:600;cursor:pointer}.view-tabs button[aria-selected="true"]{color:var(--accent)}.view-tabs button[aria-selected="true"]:after{content:"";position:absolute;bottom:-1px;left:0;right:0;height:3px;border-radius:3px;background:var(--accent)}.tab-count{font-size:11px;margin-left:4px;color:var(--text-secondary)}
 .filters{display:block;padding:14px 16px;border-radius:10px}.filter-primary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto auto;gap:12px;align-items:end}.filter-extra{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding-top:14px;margin-top:14px;border-top:1px solid var(--border)}.filter-primary .button{white-space:nowrap}.filter-more[aria-expanded="true"]{border-color:var(--accent);color:var(--accent)}.filter-count{font-size:11px;color:var(--accent)}
 .period-coverage{margin:14px 2px 0;color:var(--text-secondary);font-size:12px;line-height:1.5}
 .summary{grid-template-columns:minmax(240px,1.1fr) repeat(3,minmax(0,1fr));gap:0;margin-top:16px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface);box-shadow:0 8px 30px rgba(24,55,39,.045)}.stat{min-height:145px;border:0;border-left:1px solid var(--border);border-radius:0;padding:22px 24px;display:flex;flex-direction:column;justify-content:center}.stat:first-child{border:0}.stat.main-stat{background:#1d4938;color:#fff;border:0}.stat.main-stat .stat-label,.stat.main-stat .stat-note,.stat.main-stat small{color:#c5dbce}.stat.main-stat strong{color:#fff}.stat-value{margin:12px 0 7px}.stat-link{text-align:left;margin-top:1px;text-decoration:none}.stat-link:hover{text-decoration:underline}
@@ -191,6 +191,8 @@ html.theme-dark{--bg:#101b17;--surface:#192823;--surface-hover:#23382e;--border:
 @media(max-width:680px){.hero{padding:28px 0 18px}.hero-side{flex-wrap:wrap}.view-tabs{gap:22px;margin-bottom:18px;overflow-x:auto}.view-tabs button{white-space:nowrap}.filter-primary{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.filter-primary #resetFilters{grid-column:auto;grid-row:auto}.filter-extra{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.filter-extra .search-field{grid-column:1/-1}.stat{padding:18px;min-height:120px}.summary{gap:0}.overview-target{margin-top:42px}.section-heading h2{font-size:1.6rem}.hero-side p{font-size:11px}}
 
   </style>
+  <link rel="stylesheet" href="/vendor/ui-select.css">
+  <script src="/vendor/ui-select.js"></script>
 </head>
 <body>
 
@@ -222,7 +224,7 @@ html.theme-dark{--bg:#101b17;--surface:#192823;--surface-hover:#23382e;--border:
 </header>
 <section class="hero animate delay-1" aria-labelledby="page-title">
   <div><div class="eyebrow">采购决策 / COST SAVINGS</div><h1 id="page-title">采购降本分析<span style="color:var(--accent)">.</span></h1><p>从价格变化到实际入库，查看降本贡献与待复核事项。</p></div>
-  <div class="hero-side"><span class="demo-badge">模拟数据</span><p>全部为虚构记录，仅供演示</p><button id="refreshData" class="button refresh-button" type="button">刷新数据</button><span id="refreshStatus" class="refresh-status" role="status"></span></div>
+  <div class="hero-side"><span class="demo-badge">模拟数据</span><p>全部为虚构记录，仅供演示</p></div>
 </section>
 <div id="loadStatus" class="status-message" role="status">正在读取模拟数据…</div>
 <div id="dashboard" hidden>
@@ -678,9 +680,7 @@ function setFilterEvents() {
   });
 }
 async function loadDashboard() {
-  var previousMonth = state.month, hadData = Boolean(state.data), selected = {};
-  ['company','owner','kind','category','supplier'].forEach(function(id) { selected[id] = $(id).value; });
-  $('refreshData').disabled = true; $('refreshStatus').textContent = '正在读取…';
+  var previousMonth = state.month, hadData = Boolean(state.data);
   try {
     var response = await fetch('/api/savings-demo', { cache: 'no-store' });
     if (!response.ok) throw new Error(await response.text());
@@ -705,17 +705,13 @@ async function loadDashboard() {
     selectOptions('category', data.detail.map(function(r) { return r['五级分类']; }), '全部分类');
     selectOptions('supplier', data.detail.map(function(r) { return r['供应商名称']; }), '全部供应商');
     $('snapshotInfo').textContent = '模拟库导入于 ' + String(data.meta['导入时间'] || '—').replace('T', ' ').slice(0, 19) + ' · 金额单位：元';
-    var changed = Object.keys(selected).some(function(id) { return selected[id] && $(id).value !== selected[id]; });
-    $('refreshStatus').textContent = previousMonth && previousMonth !== state.month ? '原周期已不存在，已切换至 ' + state.month : changed ? '部分筛选项已不存在，已清除' : hadData ? '已读取最新数据' : '';
     $('loadStatus').hidden = true; $('loadStatus').classList.remove('error'); $('dashboard').hidden = false; renderAll();
   } catch (error) {
     var explanation = error instanceof TypeError ? '无法连接本地服务，请检查页面地址和服务是否运行。' : (error.message || String(error));
-    $('loadStatus').hidden = false; $('loadStatus').classList.add('error'); $('loadStatus').textContent = '模拟数据读取失败：' + explanation + (hadData ? ' 当前页面数据可能不是最新，请重新读取。' : '');
-    $('refreshStatus').textContent = hadData ? '读取失败，数据可能不是最新' : '读取失败，请重试';
-  } finally { $('refreshData').disabled = false; }
+    $('loadStatus').hidden = false; $('loadStatus').classList.add('error'); $('loadStatus').textContent = '模拟数据读取失败：' + explanation + (hadData ? ' 当前页面数据可能不是最新，请刷新页面。' : '');
+  }
 }
 setFilterEvents();
-$('refreshData').addEventListener('click', loadDashboard);
 loadDashboard();
 
   </script>

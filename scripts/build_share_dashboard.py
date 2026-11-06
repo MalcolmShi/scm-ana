@@ -77,18 +77,22 @@ SHELL = """<!DOCTYPE html>
 </body>
 </html>"""
 
-SHIM = """var SHARE_DATA=null;
-function shareData(){if(!SHARE_DATA)SHARE_DATA=JSON.parse(document.getElementById('share-data').textContent);return SHARE_DATA}
+SHIM = """var SHARE_META=null;
+function shareMeta(){if(!SHARE_META)SHARE_META=JSON.parse(document.getElementById('share-meta').textContent);return SHARE_META}
+var SHARE_REPORTS={};
+function shareReport(month){if(!SHARE_REPORTS[month]){var el=document.getElementById('share-report-'+month);if(!el)return null;SHARE_REPORTS[month]=JSON.parse(el.textContent)}return SHARE_REPORTS[month]}
+var SHARE_MONTHLY=null;
+function shareMonthly(){if(!SHARE_MONTHLY)SHARE_MONTHLY=JSON.parse(document.getElementById('share-monthly').textContent);return SHARE_MONTHLY}
 async function api(path,params){
-  params=params||{};var D=shareData();
-  if(path==='/api/periods')return D.periods.slice();
+  params=params||{};
+  if(path==='/api/periods')return shareMeta().periods.slice();
   if(path==='/api/report'){
-    var m=D.reports[params.month];if(!m)throw Error('该月份没有归档数据');
+    var m=shareReport(params.month);if(!m)throw Error('该月份没有归档数据');
     if(!m._rows){m._rows=m.rows.map(function(values){var o={};m.columns.forEach(function(c,i){o[c]=values[i]});return o})}
     return {data:{columns:m.columns,rows:m._rows},archiveDate:m.archive_date};
   }
   if(path==='/api/monthly'){
-    var key=String(params.material),series=(D.monthly[key]||[]).filter(function(x){return x[0]<=params.month});
+    var key=String(params.material),series=(shareMonthly()[key]||[]).filter(function(x){return x[0]<=params.month});
     return {columns:['采购月','月采购量','月含税金额万'],rows:series.map(function(x){return {'采购月':x[0],'月采购量':x[1],'月含税金额万':x[2]}})};
   }
   if(path==='/api/details')return {data:{columns:[],rows:[]},total:0,pageSize:50};
@@ -136,10 +140,13 @@ def build_payload(ends: list[str]) -> tuple[dict, dict[str, object]]:
 
 
 def inline_assets(html: str) -> str:
-    for name in ('chart.umd.min.js', 'html-to-image.js'):
+    for name in ('chart.umd.min.js', 'html-to-image.js', 'ui-select.js'):
         code = (VENDOR / name).read_text(encoding='utf-8')
         html = html.replace(f'<script src="/vendor/{name}"></script>',
                             '<script>\n' + code + '\n</script>')
+    css = (VENDOR / 'ui-select.css').read_text(encoding='utf-8')
+    html = html.replace('<link rel="stylesheet" href="/vendor/ui-select.css">',
+                        '<style>\n' + css + '\n</style>')
     return html
 
 
@@ -182,6 +189,21 @@ def inject_share_data(html: str, payload_json: str) -> str:
     return html[:marker] + tag + html[marker:]
 
 
+def inject_increment_blocks(html: str, payload: dict) -> str:
+    """增量页的数据按块拆开：概览、每月报表、月度趋势各一块，用到才解析。"""
+    def block(block_id: str, body) -> str:
+        text = json.dumps(body, ensure_ascii=False, separators=(',', ':')).replace('</', r'<\/')
+        return f'<script id="{block_id}" type="application/json">{text}</script>\n'
+
+    parts = [block('share-meta', {'periods': payload['periods'],
+                                  'monthly_snapshot': payload['monthly_snapshot']})]
+    parts += [block(f'share-report-{month}', data) for month, data in payload['reports'].items()]
+    parts.append(block('share-monthly', payload['monthly']))
+
+    marker = html.index('<script>', html.index('<body>'))
+    return html[:marker] + ''.join(parts) + html[marker:]
+
+
 def patch_page(html: str, payload: dict) -> str:
     source_style = style_block(html)
 
@@ -221,11 +243,12 @@ def patch_page(html: str, payload: dict) -> str:
     if source_style.removesuffix('</style>') not in style_block(html):
         raise SystemExit('样式校验失败：分享版 <style> 与本地页面不一致，请检查补丁顺序。')
 
-    return inject_share_data(html, json.dumps(payload, ensure_ascii=False, separators=(',', ':')))
+    return inject_increment_blocks(html, payload)
 
 
 def patch_savings_page(html: str, payload_json: str) -> str:
     source_style = style_block(html)
+    html = inline_assets(html)
 
     html = _replace_once(
         html,
@@ -287,8 +310,9 @@ def main() -> None:
 
     increment_html = patch_page(SOURCE_PAGE.read_text(encoding='utf-8'), payload)
     fail = [name for name, ok in (
-        ('增量：数据块缺失', '<script id="share-data"' in increment_html),
-        ('增量：接口桩未生效', 'var SHARE_DATA=null;' in increment_html),
+        ('增量：数据分块缺失', '<script id="share-meta"' in increment_html
+         and '<script id="share-monthly"' in increment_html),
+        ('增量：接口桩未生效', 'var SHARE_REPORTS={};' in increment_html),
         ('增量：仍有外部脚本引用', '/vendor/' not in increment_html),
         ('增量：场景导航未替换', 'parent.showView(\'savings\')' in increment_html),
     ) if not ok]
@@ -299,6 +323,7 @@ def main() -> None:
         ('降本：数据块缺失', '<script id="share-data"' in savings_html),
         ('降本：接口桩未生效', 'ok: true, json: async function' in savings_html),
         ('降本：场景导航未替换', 'parent.showView(\'increment\')' in savings_html),
+        ('降本：仍有外部脚本引用', '/vendor/' not in savings_html),
     ) if not ok]
     if fail:
         raise SystemExit('分享版自检失败：' + '、'.join(fail))
@@ -308,6 +333,8 @@ def main() -> None:
         raise SystemExit('分享版自检失败：场景文档的脚本结束标记未正确转义。')
     if page.count('id="doc-increment"') != 1 or page.count('id="doc-savings"') != 1:
         raise SystemExit('分享版自检失败：场景文档缺失。')
+    if '/vendor/' in page:
+        raise SystemExit('分享版自检失败：仍有 /vendor/ 外链资源未内联。')
     if DOC_TOKEN not in page:
         raise SystemExit('分享版自检失败：场景文档未嵌入。')
 
